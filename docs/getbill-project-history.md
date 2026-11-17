@@ -1,6 +1,6 @@
 # getBill project history
 
-_Last modified: 2026-11-17 13:18 EST_
+_Last modified: 2026-11-17 13:25 EST_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -29,6 +29,7 @@ planned releases.
 | 0.1.0-alpha.12 | 2026-11-17 | Every document in `docs/` was renamed to start with `getbill-`. |
 | 0.1.0-alpha.13 | 2026-11-17 | The Git history was reset to one commit, and this page was added. |
 | 0.1.0-alpha.14 | 2026-11-17 | The questionnaire gained nine questions about government customers and federal compliance, and the engineering note gained the matching gaps. |
+| 0.1.0-alpha.15 | 2026-11-17 | The blank requirements workbook is kept in the repository as a template, and a check refuses it once it holds any answer. |
 
 ## Decisions and the reasons for them
 
@@ -98,6 +99,10 @@ planned releases.
 - The [questionnaire](getbill-pipeline-questions.md) holds the questions only. The answers are kept
   in a private workbook in SharePoint or OneDrive, which is the source of truth for the
   requirements. Git ignores requirements workbooks, and the pre-commit hook refuses them.
+- From version 0.1.0-alpha.15, the repository also keeps one blank copy of the workbook as a
+  template, so people can download it. It holds every question and no answers. The pre-commit hook
+  checks it with `scripts/check_blank_workbook.py` and refuses it once any answer is typed in, and
+  the tests check that it holds the same questions as the questionnaire.
 - On 2026-11-17, no compliance or security framework had been chosen. Because most customers are
   expected to be U.S. federal agencies, questions C7 to C15 were added to ask about government
   customers, Controlled Unclassified Information, frameworks such as FedRAMP and NIST SP 800-53,
@@ -116,5 +121,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:25 EST. Modified by: mbitar._
 <!-- /document-footer -->

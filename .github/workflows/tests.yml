@@ -3,7 +3,9 @@ name: Tests
 # When the tests run:
 # - On a push to main or a pull request, but only when something other than documents changed.
 #   Changes to docs/, Markdown files, the README banner, LICENSE, and the version line in
-#   src/getbill/__init__.py do not count, because they cannot change how getBill behaves.
+#   src/getbill/__init__.py do not count, because they cannot change how getBill behaves. The
+#   requirements questionnaire, its Lists file and the blank workbook do count, because the
+#   tests check that they hold the same questions and no answers.
 # - Every Monday at 06:00 UTC, to catch new library releases and changes to GitHub's machines
 #   even when nobody pushes.
 # - When someone presses "Run workflow" on the Actions tab.
@@ -54,7 +56,11 @@ jobs:
             | grep -v -E '^docs/|\.md$|^\.github/banner\.svg$|^LICENSE$|^src/getbill/__init__\.py$' || true)
           init=$(git diff -U0 "$BEFORE" "$AFTER" -- src/getbill/__init__.py \
             | grep -E '^[+-][^+-]' | grep -v -E '^[+-]__version__ = ' || true)
-          if [ -n "$other" ] || [ -n "$init" ]; then
+          # The questionnaire, its Lists file and the blank workbook are documents, but the
+          # tests check that they hold the same questions and no answers, so they count.
+          questions=$(git diff --name-only "$BEFORE" "$AFTER" -- 'docs/getbill-pipeline-questions*' || true)
+          other="$other $questions"
+          if [ -n "${other// /}" ] || [ -n "$init" ]; then
             echo "Tests run, because these files changed:"; printf '%s\n' $other
             [ -n "$init" ] && echo "src/getbill/__init__.py (more than the version line)"
             echo "code=true" >> "$GITHUB_OUTPUT"

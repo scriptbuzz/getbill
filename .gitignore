@@ -9,11 +9,13 @@ samples/*.csv
 samples/*.parquet
 samples/*.xlsx
 
-# The requirements workbook holds answers, which are kept privately in SharePoint or OneDrive.
-# Recreate an empty one with scripts/export_questions_xlsx.py.
+# Requirements workbooks hold answers, which are kept privately in SharePoint or OneDrive.
+# The one exception is the blank template, which holds the questions and no answers. The
+# pre-commit hook refuses it once any answer is typed into it.
 docs/*.xlsx
 getbill-pipeline-questions*.xlsx
 pipeline-questions*.xlsx
+!docs/getbill-pipeline-questions.xlsx
 
 # SSH folder and SSH keys
 .ssh/

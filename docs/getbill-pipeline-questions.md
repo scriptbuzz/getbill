@@ -1,6 +1,6 @@
 # getBill requirements questionnaire
 
-_Last modified: 2026-11-17 13:18 EST_
+_Last modified: 2026-11-17 13:25 EST_
 
 This questionnaire collects what getBill must do, from where the billing files come from to how
 long they are kept. It is written for the product owner and the people who own the data and the
@@ -10,13 +10,17 @@ process.
 
 - **This page holds the questions only.** It is the master copy of every question, and changes to
   the questions are made here and reviewed like any other change to the repository.
-- **The answers are kept in a private workbook, not in this repository.** The workbook is made from
-  this page, stored in a private SharePoint or OneDrive folder, and updated there by the people who
-  answer. That private workbook is the source of truth for the requirements.
+- **The repository also keeps a blank copy of the workbook.** It holds every question, the About
+  and Summary worksheets, and the Status choices, with every Answer, Expert and Notes cell empty.
+  It is a template to download, not a place for answers.
+- **The answers are kept in a private copy of that workbook, not in this repository.** The private
+  copy is stored in a SharePoint or OneDrive folder and updated there by the people who answer. It
+  is the source of truth for the requirements.
 - **Answers never come back into this repository.** Do not paste answers into this page, and do not
-  commit a filled-in workbook or a filled-in list export. Git ignores the generated workbook, and
-  the secret check that runs before every commit refuses it even when it is added with
-  `git add -f`.
+  commit a filled-in workbook or a filled-in list export. The secret check that runs before every
+  commit refuses the template as soon as any Answer, Expert or Notes cell holds text, or any
+  Status says something other than **Not started**. It also refuses every other workbook, even
+  when it is added with `git add -f`.
 
 How to answer:
 
@@ -33,16 +37,10 @@ How to answer:
 
 ## Answering together in Excel
 
-The workbook is generated from this page and is not stored in the repository. To create it, run
-this command from the repository folder. It writes `docs/getbill-pipeline-questions.xlsx`, which Git
-ignores:
-
-```bash
-python3 scripts/export_questions_xlsx.py
-```
-
-Then upload the workbook to a private SharePoint or OneDrive folder, and share it only with the
-people who answer. From then on, the copy in that folder is the only copy that holds answers.
+The blank workbook [getbill-pipeline-questions.xlsx](getbill-pipeline-questions.xlsx) is generated
+from this page and kept in the repository. To start answering, download it, upload it to a private
+SharePoint or OneDrive folder, and share it only with the people who answer. From then on, the copy
+in that folder is the only copy that holds answers.
 
 The workbook holds every question on this page. Each section has its own worksheet. An About
 worksheet explains how to fill it in, and a Summary worksheet counts the questions in each section
@@ -57,9 +55,17 @@ then records who changed each cell and when, under **Review** › **Show Changes
 history for about 60 days. No Excel formula can show the last editor of a row, so the Expert column
 is typed by hand.
 
-When a question is added or changed on this page after the workbook is shared, do not generate a
-new workbook, because the new file would have no answers. Instead, copy the new or changed
-question into the private workbook by hand, using the same question ID.
+When a question is added or changed on this page, do two things:
+
+1. Regenerate the blank template in the repository, and commit it with the change to this page.
+   The tests check that the template holds the same questions as this page, and that it is blank.
+
+   ```bash
+   python3 scripts/export_questions_xlsx.py --force
+   ```
+
+2. Copy the new or changed question into the private workbook by hand, using the same question ID.
+   Do not replace the private workbook with the new template, because the template has no answers.
 
 ## Answering together in Microsoft Lists
 
@@ -285,5 +291,5 @@ applies to you, and what getBill should do when it happens. "Does not apply" is 
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:25 EST. Modified by: mbitar._
 <!-- /document-footer -->

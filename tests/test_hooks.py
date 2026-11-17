@@ -64,6 +64,47 @@ def test_a_line_marked_as_a_false_alarm_passes(repo):
     assert commit(repo, "guide.md", text).returncode == 0
 
 
+# ---------------------------------------------------------------- pre-commit: workbooks
+
+TEMPLATE = HOOKS.parent / "docs" / "getbill-pipeline-questions.xlsx"
+
+
+def commit_workbook(repo, name, answer=None):
+    """Commit a copy of the blank template under the given name, with an optional answer typed in."""
+    target = repo / name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if answer is None:
+        shutil.copy(TEMPLATE, target)
+    else:
+        from openpyxl import load_workbook
+        workbook = load_workbook(TEMPLATE)
+        sheet = workbook["0 Goals"]
+        sheet.cell(row=2, column=[cell.value for cell in sheet[1]].index("Answer") + 1, value=answer)
+        workbook.save(target)
+    git(repo, "add", "-f", name)
+    return git(repo, "commit", "-q", "-m", f"Add {name}", check=False)
+
+
+def test_the_blank_workbook_template_passes(repo):
+    assert commit_workbook(repo, "docs/getbill-pipeline-questions.xlsx").returncode == 0
+
+
+def test_the_workbook_template_with_an_answer_is_blocked_and_the_answer_is_not_shown(repo):
+    pytest.importorskip("openpyxl")
+    result = commit_workbook(repo, "docs/getbill-pipeline-questions.xlsx", answer="Monthly reports")
+    output = result.stdout + result.stderr
+    assert result.returncode != 0
+    assert "0 Goals!E2 (Answer)" in output
+    assert "Monthly reports" not in output
+
+
+@pytest.mark.parametrize("name", ["docs/answers.xlsx", "getbill-pipeline-questions-answered.xlsx"])
+def test_other_requirements_workbooks_are_blocked_even_when_blank(repo, name):
+    result = commit_workbook(repo, name)
+    assert result.returncode != 0
+    assert name in result.stdout + result.stderr
+
+
 # ---------------------------------------------------------------- pre-push: version
 
 def commit_version(repo, version):

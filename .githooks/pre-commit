@@ -4,7 +4,8 @@
 # It checks two things:
 #   1. File names: SSH keys, private keys, certificates, .env files, AWS credential files and
 #      requirements workbooks (which hold private answers) are refused, even when they were
-#      added with "git add -f".
+#      added with "git add -f". The one exception is the blank template
+#      docs/getbill-pipeline-questions.xlsx, which is allowed only while it holds no answers.
 #   2. File contents: every added line is searched for common secret formats, such as AWS
 #      access keys, private key blocks, API tokens and passwords written into code.
 #
@@ -28,8 +29,28 @@ if [ -s "$work/files" ]; then
 fi
 
 # ---- 1b. Requirements workbooks, which hold answers that are kept privately in SharePoint.
+# One blank template is allowed: docs/getbill-pipeline-questions.xlsx, and only while every
+# Answer, Expert and Notes cell is empty and every Status says "Not started". The check reads
+# the staged copy of the file, which is what the commit would store.
+template="docs/getbill-pipeline-questions.xlsx"
+checker="$(cd "$(dirname "$0")/.." && pwd)/scripts/check_blank_workbook.py"
 git diff --cached --name-only --diff-filter=ACMR |
   grep -E '^docs/[^/]*\.xlsx$|(^|/)(getbill-)?pipeline-questions[^/]*\.xlsx$' > "$work/workbooks"
+if grep -qx "$template" "$work/workbooks"; then
+  grep -vx "$template" "$work/workbooks" > "$work/others"
+  mv "$work/others" "$work/workbooks"
+  git show ":$template" > "$work/template.xlsx"
+  if ! command -v python3 > /dev/null 2>&1 || [ ! -f "$checker" ]; then
+    echo "Commit blocked: $template can be committed only after it is checked for answers,"
+    echo "and that check needs python3 and scripts/check_blank_workbook.py."
+    found=1
+  elif ! python3 "$checker" "$work/template.xlsx" > /dev/null 2> "$work/answers"; then
+    echo "Commit blocked: $template must stay blank in the repository. Answers belong in the"
+    echo "private SharePoint or OneDrive copy. These cells are not blank:"
+    grep '^  ' "$work/answers"
+    found=1
+  fi
+fi
 if [ -s "$work/workbooks" ]; then
   echo "Commit blocked: requirements workbooks hold answers, which stay in the private SharePoint copy:"
   sed 's/^/  /' "$work/workbooks"

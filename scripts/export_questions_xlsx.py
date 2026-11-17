@@ -10,9 +10,10 @@ reads its tables and writes an empty workbook, docs/getbill-pipeline-questions.x
 
     python3 scripts/export_questions_xlsx.py
 
-The workbook is not stored in the repository: Git ignores it, and the secret check that runs before
-every commit refuses it. Upload it to a private SharePoint or OneDrive folder, where people answer
-it. That private copy is the source of truth for the answers.
+The repository keeps this blank workbook as a template. People download it and upload it to a
+private SharePoint or OneDrive folder, where they answer it. That private copy is the source of
+truth for the answers. The secret check that runs before every commit refuses the template as soon
+as it holds any answer, using scripts/check_blank_workbook.py.
 
 The script refuses to replace a workbook that already exists, so a filled-in copy cannot be
 overwritten by accident. Pass --force to replace it anyway.

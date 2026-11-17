@@ -233,7 +233,61 @@ def test_the_workbook_script_does_not_replace_an_existing_workbook(load_script, 
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="Git is not installed.")
-def test_git_ignores_the_generated_workbook():
-    result = subprocess.run(["git", "check-ignore", "--no-index", "-q", "docs/getbill-pipeline-questions.xlsx"],
-                            cwd=ROOT, capture_output=True)
-    assert result.returncode == 0
+@pytest.mark.parametrize("name, ignored", [
+    ("docs/getbill-pipeline-questions.xlsx", False),  # The blank template is kept.
+    ("docs/getbill-pipeline-questions-answered.xlsx", True),
+    ("docs/other.xlsx", True),
+    ("pipeline-questions.xlsx", True),
+])
+def test_git_keeps_only_the_blank_workbook_template(name, ignored):
+    result = subprocess.run(["git", "check-ignore", "--no-index", "-q", name], cwd=ROOT, capture_output=True)
+    assert (result.returncode == 0) is ignored
+
+
+# ------------------------------------- scripts/check_blank_workbook.py
+
+TEMPLATE = DOCS / "getbill-pipeline-questions.xlsx"
+
+
+def answered_copy(tmp_path, sheet, heading, value):
+    """Save a copy of the template with one cell filled in under the given column heading."""
+    from openpyxl import load_workbook
+    workbook = load_workbook(TEMPLATE)
+    worksheet = workbook[sheet]
+    column = [cell.value for cell in worksheet[1]].index(heading) + 1
+    worksheet.cell(row=2, column=column, value=value)
+    path = tmp_path / "answered.xlsx"
+    workbook.save(path)
+    return path
+
+
+def test_the_committed_workbook_is_blank_and_holds_every_question(load_script):
+    pytest.importorskip("openpyxl")
+    from openpyxl import load_workbook
+    assert load_script("check_blank_workbook").find_answers(str(TEMPLATE)) == []
+    markdown = (DOCS / "getbill-pipeline-questions.md").read_text(encoding="utf-8")
+    expected = [row["Question ID"] for row in load_script("export_questions").read_questions(markdown)]
+    workbook = load_workbook(TEMPLATE)
+    found = [row[0] for sheet in workbook.worksheets[2:]
+             for row in sheet.iter_rows(min_row=2, values_only=True) if row[0]]
+    assert found == expected  # Regenerate the template after changing the questionnaire.
+
+
+@pytest.mark.parametrize("sheet, heading, value", [
+    ("6 Security", "Answer", "FedRAMP Moderate"),
+    ("0 Goals", "Expert", "A. Person"),
+    ("1 Source", "Notes", "Ask finance."),
+    ("10 Scenarios", "Status", "Agreed"),
+])
+def test_a_workbook_with_any_answer_is_not_blank(load_script, tmp_path, sheet, heading, value):
+    pytest.importorskip("openpyxl")
+    path = answered_copy(tmp_path, sheet, heading, value)
+    problems = load_script("check_blank_workbook").find_answers(str(path))
+    assert len(problems) == 1 and problems[0].startswith(f"{sheet}!") and heading in problems[0]
+    assert value not in problems[0]  # The answer itself is never shown.
+
+
+def test_the_checker_refuses_a_file_that_is_not_a_workbook(load_script, tmp_path):
+    path = tmp_path / "broken.xlsx"
+    path.write_text("not a workbook")
+    assert load_script("check_blank_workbook").main([str(path)]) == 1

@@ -1,13 +1,13 @@
-# getBill v0.1.0-alpha.14
+# getBill v0.1.0-alpha.15
 
-_Last modified: 2026-11-17 13:18 EST_
+_Last modified: 2026-11-17 13:25 EST_
 
 <p align="center">
   <img src=".github/banner.svg" alt="getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks: CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3." width="900">
 </p>
 
 <p align="center">
-  <img alt="Version 0.1.0-alpha.14" src="https://img.shields.io/badge/version-0.1.0--alpha.14-FF9900">
+  <img alt="Version 0.1.0-alpha.15" src="https://img.shields.io/badge/version-0.1.0--alpha.15-FF9900">
   <img alt="License: proprietary, FPT use only" src="https://img.shields.io/badge/license-proprietary%2C%20FPT%20only-B42318">
   <img alt="Python 3.9 or newer" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&amp;logoColor=white">
   <img alt="Input: CSV or Parquet" src="https://img.shields.io/badge/input-CSV%20%7C%20Parquet-0E7C86">
@@ -32,7 +32,7 @@ one at a time in the terminal. The original CSV and Parquet files are never chan
 
 > [!NOTE]
 > This is an alpha release. It works, but it is still changing and has not yet been tested on real
-> AWS accounts. `getbill --version` prints `0.1.0a14`.
+> AWS accounts. `getbill --version` prints `0.1.0a15`.
 
 ## Features
 
@@ -307,8 +307,8 @@ To run the tests on your computer:
 ## Versions
 
 Every push to GitHub carries a new version number. The number is set in one place,
-`src/getbill/__init__.py`, in Python's format, such as `0.1.0a14`. People see it in a longer form,
-such as `v0.1.0-alpha.14`, in this README's title and badge, on both demo pages, and in the banner.
+`src/getbill/__init__.py`, in Python's format, such as `0.1.0a15`. People see it in a longer form,
+such as `v0.1.0-alpha.15`, in this README's title and badge, on both demo pages, and in the banner.
 
 Before each push, raise the version. The script updates every place that shows it:
 
@@ -335,9 +335,11 @@ and refuses the commit when the staged changes contain a secret. It checks two t
 
 - **File names.** The hook refuses SSH keys, files in a `.ssh` folder, private keys and certificates
   (`.pem`, `.key`, `.p12`, `.pfx`, and similar), `.env` files, and AWS credential files. It also
-  refuses requirements workbooks, such as `docs/getbill-pipeline-questions.xlsx`, because they hold answers
-  that are kept privately in SharePoint or OneDrive. It refuses all of these even when they were
-  added with `git add -f`, which bypasses `.gitignore`.
+  refuses requirements workbooks, because they hold answers that are kept privately in SharePoint
+  or OneDrive. It refuses all of these even when they were added with `git add -f`, which bypasses
+  `.gitignore`. The one exception is the blank template `docs/getbill-pipeline-questions.xlsx`. The
+  hook allows it only while every Answer, Expert and Notes cell is empty and every Status says
+  "Not started", and it names any cell that is not blank without showing what the cell says.
 - **File contents.** The hook searches every added line for common secret formats. These include
   AWS access keys, secret keys, and session tokens, private key blocks, GitHub, Slack, and Google
   tokens, other API keys, passwords written into code, and URLs that contain a user name and
@@ -381,5 +383,5 @@ Without `--changed`, the script stamps every document. You can also name the fil
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:25 EST. Modified by: mbitar._
 <!-- /document-footer -->

@@ -1,0 +1,41 @@
+#!/bin/sh
+# Git pre-push hook that refuses a push unless getBill's version number was raised.
+#
+# Every push to GitHub must carry a new version. The hook compares the version in
+# src/getbill/__init__.py in the commit being pushed with the version in the commit that is
+# already on GitHub. When they match, the push is refused.
+#
+# To raise the version, run:   python3 scripts/bump_version.py
+# then commit the change and push again.
+#
+# Turn the hooks on once per clone:   git config core.hooksPath .githooks
+# Skip the check for one push (only when you are sure):   git push --no-verify
+
+version_at() {
+  git show "$1:src/getbill/__init__.py" 2>/dev/null | sed -n 's/^__version__ = "\(.*\)"$/\1/p'
+}
+
+zero=0000000000000000000000000000000000000000
+status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # A deleted branch, or a branch that does not exist on GitHub yet, needs no comparison.
+  [ "$local_sha" = "$zero" ] && continue
+  [ "$remote_sha" = "$zero" ] && continue
+  # Without the commit that is on GitHub, the versions cannot be compared. Git refuses such a
+  # push anyway unless it is forced, so let it decide.
+  git cat-file -e "$remote_sha^{commit}" 2>/dev/null || continue
+
+  new=$(version_at "$local_sha")
+  old=$(version_at "$remote_sha")
+  if [ -z "$new" ]; then
+    echo "Push refused: the version number in src/getbill/__init__.py could not be read."
+    status=1
+  elif [ "$new" = "$old" ]; then
+    echo "Push refused: ${remote_ref#refs/heads/} on GitHub is already at version $old."
+    echo "Every push needs a new version. Run python3 scripts/bump_version.py, commit, and push again."
+    status=1
+  else
+    echo "Version check passed: $old becomes $new."
+  fi
+done
+exit $status

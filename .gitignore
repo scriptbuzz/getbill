@@ -1,0 +1,42 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.DS_Store
+
+# Generated sample files (recreate them with scripts/generate_cur2_sample.py)
+samples/*.csv
+samples/*.parquet
+samples/*.xlsx
+
+# The requirements workbook holds answers, which are kept privately in SharePoint or OneDrive.
+# Recreate an empty one with scripts/export_questions_xlsx.py.
+docs/*.xlsx
+getbill-pipeline-questions*.xlsx
+pipeline-questions*.xlsx
+
+# SSH folder and SSH keys
+.ssh/
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.gpg
+*.asc
+
+# AWS and other secret files
+.aws/
+credentials
+.env
+.env.*
+*.secret
+secrets.*

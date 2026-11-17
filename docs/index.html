@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>getBill Demos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one column of three link cards on the same dark palette as the walkthrough. */
+:root {
+  color-scheme: dark;
+  --bg: #0E141C;
+  --surface: #161F2B;
+  --line: #2A3646;
+  --text: #E8EDF3;
+  --muted: #9AA8B8;
+  --accent: #FF9900;
+  --font-ui: 'Inter', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
+}
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-ui);
+  /* Side margins grow with the screen: 16px on phones, 4% of the width on larger screens,
+     and at most 64px on wide desktops. They also clear a phone's notch or rounded corners. */
+  padding-left: max(clamp(16px, 4vw, 64px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(16px, 4vw, 64px), env(safe-area-inset-right, 0px));
+  padding-block: 48px 40px;
+}
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
+header { display: flex; flex-direction: column; gap: 6px; }
+h1 { margin: 0; font-size: clamp(32px, 6vw, 48px); font-weight: 700; letter-spacing: -0.01em; }
+.ver { display: inline-block; vertical-align: middle; margin-left: 10px; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 999px;
+  font: 600 14px var(--font-mono); color: var(--accent); letter-spacing: 0.02em; }
+.stamp { margin: 0; font-size: 13px; font-style: italic; color: var(--muted); }
+.lede { margin: 8px 0 0; font-size: 17px; line-height: 1.6; color: var(--muted); max-width: 64ch; }
+a.inline { color: var(--accent); }
+.links { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.links a { display: flex; flex-direction: column; gap: 6px; padding: 20px 22px; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 12px; color: var(--text); text-decoration: none; }
+.links a:hover, .links a:focus-visible { border-color: var(--accent); outline: none; }
+.links .name { font-size: 19px; font-weight: 600; }
+.links .name::after { content: ' →'; color: var(--accent); }
+.links .what { font-size: 15px; line-height: 1.55; color: var(--muted); }
+.links .meta { font: 12px var(--font-mono); color: #7F8C9C; }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>getBill <span class="ver">v0.1.0-alpha.13</span></h1>
+    <p class="stamp" id="last-modified">Last modified: 2026-11-17 13:10 EST</p>
+    <p class="lede">getBill is a command-line tool that reads AWS Cost and Usage Report (CUR 2.0) files in CSV or Parquet format from Amazon S3 and writes Excel workbooks back to Amazon S3, in the same AWS account or another one.</p>
+    <p class="lede">getBill is proprietary software owned by FPT, for FPT use only. It is not free or open source software, and seeing these pages does not give permission to use, copy or share it. The terms are in the <a class="inline" href="https://github.com/scriptbuzz/getbill/blob/main/LICENSE">LICENSE</a> file.</p>
+  </header>
+  <ul class="links">
+    <li><a href="getbill-run-recording.html">
+      <span class="name">Walkthrough: CUR 2.0 files in S3 to Excel workbooks</span>
+      <span class="what">A screen recording of one complete run, with captions and explanation bubbles at the key moments. It shows preparing sample files, signing in to two AWS accounts, converting a CSV file and a Parquet file, and opening the finished workbook.</span>
+      <span class="meta">About 3½ minutes at the starting speed of 0.5×. Speeds run from 0.25× to 2×, and you can jump to any step.</span>
+    </a></li>
+    <li><a href="getbill-flow-diagram.svg">
+      <span class="name">Flow diagram</span>
+      <span class="what">Every step of a run and every question getBill asks, with the AWS account each file is read from or written to.</span>
+      <span class="meta">One page diagram</span>
+    </a></li>
+    <li><a href="https://github.com/scriptbuzz/getbill">
+      <span class="name">Source code and setup guide</span>
+      <span class="what">The code, the README with installation steps and IAM permissions, and the script that makes sample CUR 2.0 files.</span>
+      <span class="meta">github.com/scriptbuzz/getbill</span>
+    </a></li>
+  </ul>
+  <footer id="document-footer">Internal use only. Last modified: 2026-11-17 13:10 EST. Modified by: mbitar.</footer>
+</main>
+</body>
+</html>

@@ -1,0 +1,86 @@
+name: Tests
+
+# When the tests run:
+# - On a push to main or a pull request, but only when something other than documents changed.
+#   Changes to docs/, Markdown files, the README banner, LICENSE, and the version line in
+#   src/getbill/__init__.py do not count, because they cannot change how getBill behaves.
+# - Every Monday at 06:00 UTC, to catch new library releases and changes to GitHub's machines
+#   even when nobody pushes.
+# - When someone presses "Run workflow" on the Actions tab.
+#
+# The tests use a simulated AWS, so no AWS account is needed. Each Python version runs inside its
+# official Docker image, because current GitHub runners no longer offer Python 3.9 directly.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: Check what changed
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.check.outputs.code }}
+    steps:
+      - name: Check out the code with its history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide whether the tests need to run
+        id: check
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+        run: |
+          # Scheduled runs, manual runs and pull requests always run the tests.
+          if [ "$EVENT" != "push" ]; then
+            echo "Tests run, because this is a $EVENT run."
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # A new branch, or a push whose previous commit is unknown, runs the tests.
+          if ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            echo "Tests run, because the previous commit is not available."
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          other=$(git diff --name-only "$BEFORE" "$AFTER" \
+            | grep -v -E '^docs/|\.md$|^\.github/banner\.svg$|^LICENSE$|^src/getbill/__init__\.py$' || true)
+          init=$(git diff -U0 "$BEFORE" "$AFTER" -- src/getbill/__init__.py \
+            | grep -E '^[+-][^+-]' | grep -v -E '^[+-]__version__ = ' || true)
+          if [ -n "$other" ] || [ -n "$init" ]; then
+            echo "Tests run, because these files changed:"; printf '%s\n' $other
+            [ -n "$init" ] && echo "src/getbill/__init__.py (more than the version line)"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Tests skipped, because only documents or the version number changed."
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  test:
+    name: Python ${{ matrix.python-version }}
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    container: python:${{ matrix.python-version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Install getBill with its test libraries
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[test]'
+
+      - name: Run the tests with a coverage report
+        run: python -m pytest -q --cov=getbill --cov-report=term-missing --cov-fail-under=80

@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "getbill"
+dynamic = ["version"]
+description = "getBill is an interactive command-line tool that converts CSV and Parquet files in an S3 folder into Excel workbooks in another S3 folder, in the same account or another account."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Mike Bitar" }]
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: Other/Proprietary License",
+    "Private :: Do Not Upload",
+]
+dependencies = [
+    "boto3>=1.28",
+    "openpyxl>=3.1",
+    "pyarrow>=14",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+    "pytest-cov>=4",
+    "moto[s3]>=5",
+]
+
+[project.scripts]
+getbill = "getbill.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = { attr = "getbill.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>getBill Walkthrough: CUR 2.0 Files to Excel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: a single dark "screen recording" player. A fixed 1280x720 screen is scaled to the
+   player width; captions, controls and chapters sit outside it so they stay readable. */
+:root {
+  color-scheme: dark;
+  --bg: #0E141C;
+  --surface: #161F2B;
+  --line: #2A3646;
+  --text: #E8EDF3;
+  --muted: #9AA8B8;
+  --accent: #FF9900;
+  --term: #0B1016;
+  --ok: #7EE0A1;
+  --input: #7CC4FF;
+  --warn: #FFC86B;
+  --shell: #8FD694;
+  --sheet-bg: #F7F8FA;
+  --sheet-ink: #1D2733;
+  --sheet-grid: #D5DBE3;
+  --sheet-head: #E9EDF2;
+  --font-ui: 'Inter', -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, 'Courier New', monospace;
+}
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg); color: var(--text); font-family: var(--font-ui);
+  /* Side margins grow with the screen: 16px on phones, 4% of the width on larger screens,
+     and at most 64px on wide desktops. They also clear a phone's notch or rounded corners. */
+  padding-left: max(clamp(16px, 4vw, 64px), env(safe-area-inset-left, 0px));
+  padding-right: max(clamp(16px, 4vw, 64px), env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+header { display: flex; flex-direction: column; gap: 4px; }
+h1 { margin: 0; font-size: clamp(22px, 3vw, 30px); font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; }
+.stamp { margin: 0; font-size: 13px; font-style: italic; color: var(--muted); }
+.ver { display: inline-block; vertical-align: middle; margin: 0 4px; padding: 2px 9px; border: 1px solid var(--accent); border-radius: 999px;
+  font: 600 13px var(--font-mono); color: var(--accent); letter-spacing: 0.02em; }
+.back { margin: 0 0 4px; font-size: 14px; }
+.back a { color: var(--accent); text-decoration: none; }
+.back a:hover, .back a:focus-visible { text-decoration: underline; }
+.lede { margin: 6px 0 0; font-size: 16px; line-height: 1.55; color: var(--muted); max-width: 68ch; }
+
+/* Player */
+/* The player always spans the page width. The script sets the screen's height so that the
+   screen, caption and controls (about 340px with the header) fit in the window, and widens the
+   simulated screen so the terminal grows sideways to fill the player. */
+.player { display: flex; flex-direction: column; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-sizing: border-box; width: 100%; }
+/* The description below the player spans the same width as the player. */
+.about { box-sizing: border-box; width: 100%; }
+.about .lede { margin: 0; max-width: none; }
+.stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #05080C; overflow: hidden; max-width: 100%; cursor: pointer; }
+/* Video-style play and pause button over the screen. It always shows while paused, and shows
+   while the pointer is over the screen or the button has keyboard focus during playback. */
+/* Full screen: the player fills the screen as a column. The caption and controls keep their
+   natural height at the bottom, and the stage takes all the space above them. */
+.player.is-full { position: fixed; inset: 0; z-index: 100; width: 100vw; height: 100vh; max-width: none; border: 0; border-radius: 0; }
+.player.is-full .stage { flex: 1 1 auto; min-height: 0; aspect-ratio: auto; }
+.player.is-full .caption, .player.is-full .controls { flex-shrink: 0; }
+.player.is-full .controls { padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); }
+.bigplay { position: absolute; left: 50%; top: 50%; z-index: 5; width: 84px; height: 84px; margin: -42px 0 0 -42px; padding: 0;
+  border-radius: 50%; border: 2px solid rgba(255, 255, 255, .85); background: rgba(14, 20, 28, .72); color: #FFFFFF;
+  font: 700 30px/80px var(--font-ui); text-align: center; cursor: pointer; opacity: 0; transition: opacity .2s; }
+.stage:hover .bigplay, .stage.paused .bigplay, .bigplay:focus-visible { opacity: 1; }
+.bigplay:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .bigplay { transition: none; } }
+.screen { position: absolute; left: 0; top: 0; width: 1280px; height: 720px; transform-origin: 0 0;
+  background: radial-gradient(120% 90% at 20% 0%, #1E2A3A 0%, #0D1219 60%); font-family: var(--font-ui); }
+.win { position: absolute; left: 40px; right: 40px; top: 28px; height: 664px; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0,0,0,.55); border: 1px solid #2B3647; display: flex; flex-direction: column; }
+.titlebar { height: 38px; background: #1B2330; display: flex; align-items: center; gap: 14px; padding: 0 14px; flex-shrink: 0; }
+.dots { display: flex; gap: 8px; }
+.dots i { width: 12px; height: 12px; border-radius: 50%; background: #3A4658; display: block; }
+.tabs { display: flex; gap: 6px; }
+.tab { font-size: 13px; color: #8E9BAB; padding: 6px 14px; border-radius: 7px; font-family: var(--font-mono); }
+.tab.on { background: #0B1016; color: #E8EDF3; }
+.win-title { margin-left: auto; font-size: 13px; color: #8E9BAB; }
+.tbody { flex: 1; background: var(--term); margin: 0; padding: 16px 20px; overflow: hidden; font-family: var(--font-mono);
+  font-size: 15px; line-height: 1.5; color: #D7DEE7; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ln { min-height: 1.5em; }
+.p { color: var(--shell); } .c { color: #F2F5F8; } .o { color: #C9D2DC; } .h { color: var(--accent); font-weight: 700; }
+.q { color: #F2F5F8; } .i { color: var(--input); font-weight: 700; } .ok { color: var(--ok); } .w { color: var(--warn); }
+.b { color: #F2F5F8; font-weight: 700; } .m { color: #7F8C9C; }
+/* Explanation bubble. While it shows, the terminal text gains bottom padding of the same
+   height, so the newest lines always sit above the bubble and are never covered. */
+.tbody.has-bubble { padding-bottom: 150px; }
+.bubble { position: absolute; left: 28px; right: 28px; bottom: 20px; box-sizing: border-box; min-height: 96px;
+  display: flex; align-items: center; gap: 16px; padding: 18px 24px; border-radius: 14px;
+  background: #FFF4E0; color: #1D2733; border: 2px solid var(--accent); box-shadow: 0 14px 36px rgba(0,0,0,.45);
+  font: 600 21px/1.4 var(--font-ui); animation: bubble-in .35s ease-out; }
+.bubble::before { content: ''; position: absolute; left: 44px; top: -14px; width: 24px; height: 24px; background: #FFF4E0;
+  border-left: 2px solid var(--accent); border-top: 2px solid var(--accent); transform: rotate(45deg); }
+.bubble .bubble-mark { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--accent); color: #1D2733;
+  font: 700 22px/40px var(--font-ui); text-align: center; }
+@keyframes bubble-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.cursor { display: inline-block; width: 9px; height: 1.15em; vertical-align: text-bottom; background: #D7DEE7; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Spreadsheet window */
+.sheetwin { background: var(--sheet-bg); color: var(--sheet-ink); }
+.sheetwin .titlebar { background: #E3E8EE; }
+.sheetwin .win-title { color: #44505E; font-weight: 600; margin-left: 0; }
+.sheetbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; font-size: 13px; color: #44505E; border-bottom: 1px solid var(--sheet-grid); background: #FFFFFF; }
+.sheetbar .ref { font-family: var(--font-mono); border: 1px solid var(--sheet-grid); padding: 2px 8px; border-radius: 4px; }
+.gridwrap { flex: 1; overflow: hidden; padding: 0; background: #FFFFFF; position: relative; }
+table.grid { border-collapse: collapse; font-size: 13px; font-family: var(--font-ui); position: relative; }
+.grid td, .grid th { border: 1px solid var(--sheet-grid); padding: 6px 8px; white-space: nowrap; height: 22px; }
+.grid th.col, .grid th.rown { background: var(--sheet-head); color: #5A6676; font-weight: 600; text-align: center; font-size: 12px; }
+.grid th.rown { width: 36px; }
+.grid tr.hdr td { font-weight: 700; background: #FFFFFF; border-bottom: 3px solid #9AA6B4; }
+.grid tr.hdr td::after { content: ' ▾'; color: #7A8796; font-weight: 400; }
+.grid td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.grid td.txt { text-align: left; }
+.tabsbar { display: flex; gap: 2px; padding: 0 16px; background: #E9EDF2; border-top: 1px solid var(--sheet-grid); height: 36px; align-items: flex-end; }
+.sheettab { background: #FFFFFF; border: 1px solid var(--sheet-grid); border-bottom: none; padding: 6px 16px; font-size: 13px; font-weight: 600; color: #1D2733; border-radius: 6px 6px 0 0; }
+.hl { outline: 3px solid var(--accent); outline-offset: -2px; background: #FFF4E0 !important; transition: background .3s; }
+/* Notes sit in a row directly under the table, so they never cover its cells. */
+.notes { display: flex; flex-wrap: wrap; gap: 16px; padding: 16px; }
+.note { background: #1B2330; color: #F2F5F8; font-size: 15px; line-height: 1.4; padding: 10px 14px; border-radius: 8px;
+  border-left: 4px solid var(--accent); box-shadow: 0 10px 30px rgba(0,0,0,.35); width: 272px; box-sizing: border-box; }
+
+/* Title and end cards */
+.card { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 18px;
+  padding: 0 120px; background: radial-gradient(120% 90% at 20% 0%, #1E2A3A 0%, #0D1219 60%); }
+.card .kick { font-size: 20px; font-weight: 600; color: var(--accent); letter-spacing: .08em; }
+.card .big { font-size: 76px; font-weight: 700; color: #F2F5F8; line-height: 1.05; }
+.card .sub { font-size: 24px; color: #B8C3D0; max-width: 900px; line-height: 1.45; }
+.card ol { margin: 4px 0 0; padding-left: 26px; font-size: 20px; color: #C9D2DC; line-height: 1.7; columns: 2; column-gap: 56px; }
+
+/* Caption and controls */
+.caption { min-height: 64px; padding: 14px 20px; font-size: 16px; line-height: 1.55; border-top: 1px solid var(--line); background: #121A24; }
+.caption strong { color: var(--accent); font-weight: 600; margin-right: 6px; }
+.controls { display: flex; align-items: center; gap: 12px; padding: 12px 16px 14px; flex-wrap: wrap; }
+.btn { font: 600 14px var(--font-ui); color: var(--text); background: #222D3B; border: 1px solid #334256; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.btn:hover { background: #2A3747; }
+.btn:focus-visible, .seek:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.track { position: relative; flex: 1 1 160px; min-width: 0; height: 28px; display: flex; align-items: center; }
+.seek { width: 100%; accent-color: var(--accent); margin: 0; }
+.ticks { position: absolute; left: 0; right: 0; top: 0; height: 6px; pointer-events: none; }
+.ticks i { position: absolute; top: 0; width: 2px; height: 6px; background: #5D6B7C; }
+.time { font: 13px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+label.speed { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+select { font: 14px var(--font-ui); color: var(--text); background: #222D3B; border: 1px solid #334256; border-radius: 8px; padding: 6px 8px; }
+
+/* Chapters */
+.chapters h2 { font-size: 18px; margin: 0 0 4px; }
+.chapters .hint { margin: 0 0 12px; font-size: 14px; color: var(--muted); }
+.chapters ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.chapters button { width: 100%; text-align: left; display: flex; gap: 10px; align-items: baseline; font: 14px/1.4 var(--font-ui); color: var(--text);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; }
+.chapters button .play { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: #222D3B; color: var(--accent);
+  font-size: 10px; line-height: 22px; text-align: center; align-self: center; }
+.chapters button .n { font: 700 13px var(--font-mono); color: var(--accent); }
+.chapters button .tm { margin-left: auto; font: 12px var(--font-mono); color: var(--muted); }
+.chapters button:hover { border-color: var(--accent); background: #1B2532; }
+.chapters button:hover .play, .chapters button:focus-visible .play { background: var(--accent); color: #161E2D; }
+.chapters button[aria-current="true"] { border-color: var(--accent); }
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+@media (prefers-reduced-motion: reduce) { .cursor { animation: none; } .hl { transition: none; } .bubble { animation: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="back"><a href="./">All getBill demos</a></p>
+    <h1>getBill <span class="ver">v0.1.0-alpha.13</span> walkthrough: CUR 2.0 files in S3 to Excel workbooks</h1>
+    <p class="stamp" id="last-modified">Last modified: 2026-11-17 13:10 EST</p>
+  </header>
+
+  <section class="player" id="player" aria-label="getBill walkthrough player">
+    <div class="stage" id="stage">
+      <button class="bigplay" id="bigplay" type="button" aria-label="Pause the walkthrough"><span id="bigplayIcon" aria-hidden="true">❚❚</span></button>
+      <div class="screen" id="screen">
+        <div class="win" id="termWin">
+          <div class="titlebar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <div class="tabs"><span class="tab" data-tab="0">1 · getbill</span><span class="tab" data-tab="1">2 · sso login</span></div>
+            <span class="win-title">Terminal</span>
+          </div>
+          <pre class="tbody" id="tbody" aria-live="off"></pre>
+          <div class="bubble" id="bubble" role="note" hidden><span class="bubble-mark" aria-hidden="true">i</span><span id="bubbleText"></span></div>
+        </div>
+        <div class="win sheetwin" id="sheetWin" hidden>
+          <div class="titlebar">
+            <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="win-title">cur2-2026-10.xlsx</span>
+          </div>
+          <div class="sheetbar"><span class="ref">G2</span><span>Showing 6 of the workbook’s 58 columns. Row 1 is the header.</span></div>
+          <div class="gridwrap" id="gridwrap"></div>
+          <div class="tabsbar"><span class="sheettab" id="sheetTab">cur2-2026-10</span></div>
+        </div>
+        <div class="card" id="titleCard">
+          <span class="kick">SCREEN RECORDING, SIMULATED</span>
+          <span class="big">getBill, end to end</span>
+          <span class="sub">From two sample CUR 2.0 files in Amazon S3 to Excel workbooks in a second AWS account.</span>
+        </div>
+        <div class="card" id="endCard" hidden>
+          <span class="kick">RUN COMPLETE</span>
+          <span class="big">2 converted, 0 skipped, 0 failed</span>
+          <ol>
+            <li>Sample files uploaded to S3</li>
+            <li>Source account signed in</li>
+            <li>CSV and Parquet files chosen</li>
+            <li>Destination in another account</li>
+            <li>Expired SSO sign-in renewed</li>
+            <li>Files converted and uploaded</li>
+            <li>Workbooks listed in S3</li>
+            <li>Workbook checked in a spreadsheet</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+    <div class="caption" id="caption" aria-live="polite"></div>
+    <div class="controls">
+      <button class="btn" id="play" type="button">Pause</button>
+      <button class="btn" id="restart" type="button">Restart</button>
+      <div class="track"><div class="ticks" id="ticks" aria-hidden="true"></div>
+        <input class="seek" id="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Position in the recording"></div>
+      <span class="time" id="time">0:00 / 0:00</span>
+      <label class="speed" for="speed">Speed
+        <select id="speed"><option value="0.25">0.25×</option><option value="0.5" selected>0.5×</option><option value="0.75">0.75×</option><option value="1">1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="1.75">1.75×</option><option value="2">2×</option></select>
+      </label>
+      <button class="btn" id="full" type="button">Full screen</button>
+    </div>
+  </section>
+
+  <section class="about">
+    <p class="lede">A simulated screen recording of one complete getBill run: preparing sample CUR 2.0 files, signing in to two AWS accounts, converting a CSV file and a Parquet file, and opening the finished workbook. The terminal text is what getBill prints. Account IDs, bucket names, file sizes and times are examples.</p>
+  </section>
+
+  <section class="chapters">
+    <h2>Jump to any step</h2>
+    <p class="hint">Click a step to play the recording from that point.</p>
+    <ol id="chapters"></ol>
+  </section>
+
+  <footer id="document-footer">Internal use only. Last modified: 2026-11-17 13:10 EST. Modified by: mbitar.</footer>
+</main>
+
+<script>
+(() => {
+  // ---------------------------------------------------------------- the script of the run
+  const PROMPT = '~/getbill $ ';
+  const ev = []; const chapters = []; let t = 0;
+  const add = (o) => ev.push(Object.assign({ t }, o));
+  const wait = (ms) => { t += ms; };
+  const chapter = (name, text) => { chapters.push({ name, t }); add({ k: 'chapter', i: chapters.length - 1 }); add({ k: 'caption', text }); };
+  const caption = (text) => add({ k: 'caption', text });
+  const out = (n, text, cls = 'o', gap = 55) => { for (const line of text.split('\n')) { add({ k: 'line', n, segs: [[line, cls]] }); t += gap; } };
+  const typeIn = (n, prefix, pcls, text, tcls, think, cps, hold, commit = true) => {
+    const start = t + think; const dur = Math.max(1, text.length) * 1000 / cps;
+    add({ k: 'type', n, prefix, pcls, text, tcls, start, dur });
+    t = start + (text ? dur : 0) + hold;
+    if (commit) add({ k: 'commit', n });
+  };
+  const cmd = (n, text) => typeIn(n, PROMPT, 'p', text, 'c', 450, 32, 300);
+  const answer = (n, prompt, text, think = 800) => typeIn(n, prompt, 'q', text, 'i', think, 9, 300);
+  // A bubble explains what the screen is showing. It hides itself after `ms` of recording time,
+  // unless a newer bubble has replaced it first.
+  let bubbleId = 0;
+  const bubble = (text, ms = 5500) => { const id = ++bubbleId; add({ k: 'bubble', id, text }); ev.push({ t: t + ms, k: 'bubbleEnd', id }); };
+
+  add({ k: 'card', c: 'title' }); wait(3400); add({ k: 'card', c: null });
+
+  chapter('Prepare the sample files', 'The sample script writes a CUR 2.0 file as CSV and as Parquet. Then the AWS CLI uploads both files to the source folder in Amazon S3.');
+  cmd(0, 'python3 scripts/generate_cur2_sample.py --output samples/cur2-2026-10.csv'); wait(900);
+  out(0, 'Wrote 10,035 lines and 58 columns (10.7 MB) to samples/cur2-2026-10.csv');
+  bubble('This sample script writes a test billing file that uses the CUR 2.0 column names from AWS Data Exports.', 6000); wait(1200);
+  cmd(0, '.venv/bin/python scripts/generate_cur2_sample.py --output samples/cur2-export-00001.snappy.parquet'); wait(1100);
+  out(0, 'Wrote 10,035 lines and 58 columns (1.9 MB) to samples/cur2-export-00001.snappy.parquet'); wait(500);
+  cmd(0, 'aws s3 cp samples/ s3://billing-exports-111122223333/cur2/ --recursive --profile finance-prod'); wait(900);
+  out(0, 'upload: samples/cur2-2026-10.csv to s3://billing-exports-111122223333/cur2/cur2-2026-10.csv', 'o', 800);
+  out(0, 'upload: samples/cur2-export-00001.snappy.parquet to s3://billing-exports-111122223333/cur2/cur2-export-00001.snappy.parquet');
+  bubble('The AWS CLI copies both sample files into the source folder in Amazon S3. getBill reads them from there.', 5000); wait(2700);
+
+  chapter('Sign in to the source account', 'getBill asks which AWS profile reaches the source account. AWS STS then confirms the account ID and the identity behind the profile.');
+  cmd(0, '.venv/bin/getbill'); wait(400);
+  out(0, 'getBill converts CSV and Parquet files in S3 into Excel workbooks. Press Ctrl+C at any time to stop.');
+  out(0, ''); out(0, '== Source account ==', 'h');
+  out(0, 'Which AWS profile signs in to the source account?', 'q');
+  out(0, '  1. finance-prod  (default)\n  2. partner-reports');
+  answer(0, 'Type a number [1]: ', '1'); wait(700);
+  out(0, '  Signed in to AWS account 111122223333 as arn:aws:sts::111122223333:assumed-role/AWSReservedSSO_BillingReadOnly_0a1b2c3d4e5f6789/analyst.', 'ok');
+  bubble('AWS STS confirms which AWS account and identity this profile signs in to, before getBill reads anything.', 5500); wait(2500);
+
+  chapter('Choose the files', 'getBill lists the buckets in the source account, then the CSV and Parquet files directly inside the chosen folder. You pick the files to convert.');
+  out(0, ''); out(0, '== Source bucket and files ==', 'h');
+  out(0, 'Which bucket is the source bucket (account 111122223333)?', 'q');
+  out(0, '  1. billing-exports-111122223333  (default)\n  2. finance-archive-111122223333\n  3. Type a bucket name that is not in this list');
+  answer(0, 'Type a number [1]: ', '1'); wait(500);
+  out(0, '  Using bucket billing-exports-111122223333 in region us-east-1.', 'ok');
+  out(0, '  Folders at the top of bucket billing-exports-111122223333:\n    cur2/\n    legacy-cur/');
+  answer(0, 'Source folder inside the bucket, for example reports/incoming (press Enter for the top of the bucket): ', 'cur2', 1000); wait(400);
+  out(0, ''); out(0, '  CSV and Parquet files in s3://billing-exports-111122223333/cur2/:');
+  out(0, '  1. cur2-2026-10.csv  (10.7 MB, changed 2026-11-16 13:02)\n  2. cur2-export-00001.snappy.parquet  (1.9 MB, changed 2026-11-16 13:02)');
+  bubble('getBill lists only the CSV and Parquet files directly inside the chosen folder. You pick which ones to convert.', 6000);
+  answer(0, 'Which files should be converted? Type numbers such as 1,3,5-7, or "all": ', 'all', 1200); wait(600);
+
+  chapter('Choose the destination', 'The workbooks should go to a bucket in another AWS account, so getBill asks for a second profile that signs in to that account.');
+  out(0, ''); out(0, '== Destination ==', 'h');
+  out(0, 'Where should the Excel files be saved?', 'q');
+  out(0, '  1. The same bucket (billing-exports-111122223333), in a different folder  (default)\n  2. Another bucket in the same AWS account (111122223333)\n  3. A bucket in a different AWS account, signed in with a second profile');
+  answer(0, 'Type a number [1]: ', '3', 1400);
+  bubble('Option 3 sends the workbooks to a bucket in another AWS account, so getBill needs a second profile.', 5500); wait(1000);
+  out(0, ''); out(0, '== Destination account ==', 'h');
+  out(0, 'Which AWS profile signs in to the destination account?', 'q');
+  out(0, '  1. finance-prod  (default)\n  2. partner-reports');
+  answer(0, 'Type a number [1]: ', '2'); wait(1000);
+
+  chapter('Renew the SSO sign-in', 'The second profile’s SSO sign-in has expired. getBill shows the exact login command, you run it in a second terminal tab, and then you try again.');
+  out(0, '  The SSO sign-in for profile "partner-reports" has expired or has not been started.', 'w');
+  out(0, '  To fix this, run this command in another terminal:\n    aws sso login --profile partner-reports', 'w');
+  bubble('The second account’s SSO sign-in has expired. getBill prints the exact command that renews it.', 6000); wait(800);
+  out(0, 'What would you like to do?', 'q');
+  out(0, '  r  Try this profile again\n  p  Pick a different profile\n  q  Quit');
+  typeIn(0, 'Type r/p/q: ', 'q', '', 'i', 0, 9, 1600, false);
+  add({ k: 'tab', n: 1 }); wait(600);
+  cmd(1, 'aws sso login --profile partner-reports'); wait(700);
+  out(1, 'Attempting to automatically open the SSO authorization page in your default browser.\nIf the browser does not open or you wish to use a different device to authorize this request, open the following URL:\n\nhttps://example.awsapps.com/start/#/device\n\nThen enter the code:\n\nWXYZ-ABCD', 'o', 70); wait(2800);
+  out(1, 'Successfully logged into Start URL: https://example.awsapps.com/start', 'ok');
+  bubble('Running the login command in a second terminal tab renews the sign-in, while getBill waits in the first tab.', 5000); wait(2600);
+  add({ k: 'tab', n: 0 }); wait(500);
+  typeIn(0, 'Type r/p/q: ', 'q', 'r', 'i', 700, 9, 300); wait(800);
+  out(0, '  Signed in to AWS account 444455556666 as arn:aws:sts::444455556666:assumed-role/AWSReservedSSO_ReportsWriter_9f8e7d6c5b4a3210/analyst.', 'ok'); wait(1400);
+
+  chapter('Confirm and convert', 'getBill checks the destination bucket, asks for the destination folder, and shows a summary before it changes anything.');
+  out(0, 'Which bucket is the destination bucket (account 444455556666)?', 'q');
+  out(0, '  1. partner-billing-reports  (default)\n  2. partner-logs\n  3. Type a bucket name that is not in this list');
+  answer(0, 'Type a number [1]: ', '1'); wait(500);
+  out(0, '  Using bucket partner-billing-reports in region eu-west-1.', 'ok');
+  out(0, '  Folders at the top of bucket partner-billing-reports:\n    excel/\n    inbox/');
+  answer(0, 'Destination folder inside the bucket, for example reports/excel (type "/" for the top of the bucket): ', 'excel/2026-10', 1100); wait(400);
+  out(0, ''); out(0, '== Summary ==', 'h');
+  out(0, '  Source:       s3://billing-exports-111122223333/cur2/  (account 111122223333, profile finance-prod)\n  Files:        2 file(s): cur2-2026-10.csv, cur2-export-00001.snappy.parquet\n  Destination:  s3://partner-billing-reports/excel/2026-10/  (account 444455556666, profile partner-reports)\n  The files are downloaded with the source profile and uploaded with the destination profile.\n  The original CSV and Parquet files are not changed or deleted.', 'o', 110);
+  bubble('Nothing has changed yet. The summary shows what getBill will read and where it will write.', 5500); wait(800);
+  answer(0, 'Start the conversion? [Y/n]: ', 'y', 2200);
+  caption('getBill downloads each file with the source profile, converts it on your computer, and uploads the workbook with the destination profile.');
+  out(0, ''); out(0, '[1/2] cur2-2026-10.csv', 'b'); wait(2300);
+  out(0, '  Converted the CSV file (10,036 rows including the header, 58 columns) and saved the workbook to s3://partner-billing-reports/excel/2026-10/cur2-2026-10.xlsx', 'ok');
+  bubble('The CSV file was converted on this computer, and the workbook was uploaded with the destination profile.', 5000); wait(2000);
+  out(0, ''); out(0, '[2/2] cur2-export-00001.snappy.parquet', 'b'); wait(1700);
+  caption('A workbook with this name already exists from an earlier run. Here you keep both files by adding the date and time to the new file’s name.');
+  out(0, '  s3://partner-billing-reports/excel/2026-10/cur2-export-00001.xlsx already exists. What should the tool do?', 'w');
+  out(0, '  o  Overwrite the existing file\n  s  Skip this file\n  t  Keep the existing file and save the new one with the date and time added to its name');
+  bubble('Answering t keeps the earlier workbook and saves the new one with the date and time added to its name.', 6000);
+  answer(0, 'Type o/s/t: ', 't', 2400); wait(1400);
+  out(0, '  Converted the Parquet file (10,036 rows including the header, 58 columns) and saved the workbook to s3://partner-billing-reports/excel/2026-10/cur2-export-00001_20261116-081422.xlsx', 'ok'); wait(500);
+  out(0, ''); out(0, '== Result ==', 'h'); out(0, '  2 converted, 0 skipped, 0 failed.', 'ok'); wait(2400);
+
+  chapter('Check the result', 'The AWS CLI lists the destination folder. Both new workbooks are there, beside the workbook from the earlier run.');
+  cmd(0, 'aws s3 ls s3://partner-billing-reports/excel/2026-10/ --profile partner-reports'); wait(800);
+  out(0, '2026-11-16 08:14:18    2964310 cur2-2026-10.xlsx\n2026-11-12 16:40:03    2871945 cur2-export-00001.xlsx\n2026-11-16 08:14:22    2871988 cur2-export-00001_20261116-081422.xlsx', 'o', 130);
+  bubble('The destination folder now holds both new workbooks, beside the workbook from the earlier run.', 5000); wait(4000);
+
+  chapter('Open the workbook', 'The workbook keeps the meaning of the data: the header row is bold, filtered and frozen, account IDs stay text, and costs are numbers.');
+  add({ k: 'view', v: 'sheet' }); wait(1400);
+  for (let i = 1; i <= 4; i++) { add({ k: 'note', i }); wait(i === 4 ? 3200 : 2200); }
+  add({ k: 'card', c: 'end' }); add({ k: 'caption', text: 'The run is complete. Use Restart to watch it again, or click a step below to replay it.' }); wait(4000);
+  const TOTAL = t;
+  // Bubble end events were added ahead of time, so put every event back in time order.
+  // The sort is stable, so events at the same moment keep the order they were added in.
+  ev.sort((a, b) => a.t - b.t);
+
+  // ---------------------------------------------------------------- the workbook view
+  const cols = ['G', 'W', 'Z', 'AB', 'AD', 'AF'];
+  const heads = ['bill_payer_account_id', 'line_item_product_code', 'line_item_unblended_cost', 'line_item_usage_account_id', 'line_item_usage_amount', 'line_item_usage_start_date'];
+  const kinds = ['txt', 'txt', 'num', 'txt', 'num', 'txt'];
+  const rows = [
+    ['111122223333', 'AmazonS3', '1.231048', '444455556666', '3077620', '2026-10-05T00:00:00.000Z'],
+    ['111122223333', 'AmazonEC2', '5.012652285', '444455556666', '13.05378199', '2026-10-07T08:00:00.000Z'],
+    ['111122223333', 'AmazonBedrock', '2.345968102', '012345678901', '39099.46836', '2026-10-06T22:00:00.000Z'],
+    ['111122223333', 'AWSGlue', '4.481977579', '444455556666', '10.18631268', '2026-10-21T18:00:00.000Z'],
+    ['111122223333', 'AmazonAthena', '4.340777772', '012345678901', '0.868155554', '2026-10-12T13:00:00.000Z'],
+    ['111122223333', 'ElasticMapReduce', '8.710054666', '012345678901', '1507.321046', '2026-10-05T15:00:00.000Z'],
+    ['111122223333', 'AmazonRedshift', '13.04', '444455556666', '4', '2026-10-13T20:00:00.000Z'],
+    ['111122223333', 'AmazonMSK', '1.05', '777788889999', '5', '2026-10-23T06:00:00.000Z'],
+    ['111122223333', 'AmazonKinesis', '0.203609448', '012345678901', '14543532', '2026-10-16T00:00:00.000Z'],
+  ];
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  let grid = '<table class="grid"><tr><th class="rown"></th>' + cols.map((c) => `<th class="col">${c}</th>`).join('') + '</tr>';
+  grid += '<tr class="hdr"><th class="rown">1</th>' + heads.map((h) => `<td data-col="${h}">${esc(h)}</td>`).join('') + '</tr>';
+  rows.forEach((r, i) => {
+    grid += `<tr><th class="rown">${i + 2}</th>` + r.map((v, j) => `<td class="${kinds[j]}" data-col="${heads[j]}">${esc(v)}</td>`).join('') + '</tr>';
+  });
+  grid += '</table>';
+  const gridwrap = document.getElementById('gridwrap');
+  gridwrap.innerHTML = grid +
+    '<div class="notes">' +
+    '<div class="note" id="n1" hidden>1. The header row is bold, has filter buttons, and stays visible while you scroll.</div>' +
+    '<div class="note" id="n2" hidden>2. Account IDs stay text, so 012345678901 keeps its leading zero.</div>' +
+    '<div class="note" id="n3" hidden>3. Costs are numbers, so sums and sorting work.</div>' +
+    '<div class="note" id="n4" hidden>4. The sheet is named after the source file.</div>' +
+    '</div>';
+
+  // ---------------------------------------------------------------- playback
+  const $ = (id) => document.getElementById(id);
+  const tbody = $('tbody'), cap = $('caption'), seek = $('seek'), timeEl = $('time'), playBtn = $('play');
+  const tabsEls = [...document.querySelectorAll('.tab')];
+  const fmt = (ms) => { const s = Math.floor(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  seek.max = String(Math.round(TOTAL));
+
+  const ticks = $('ticks');
+  ticks.innerHTML = chapters.map((c) => `<i style="left:${(c.t / TOTAL * 100).toFixed(2)}%"></i>`).join('');
+  $('chapters').innerHTML = chapters.map((c, i) =>
+    `<li><button type="button" data-i="${i}" aria-label="Play from step ${i + 1}: ${esc(c.name)}"><span class="play" aria-hidden="true">▶</span><span class="n">${i + 1}</span><span>${esc(c.name)}</span><span class="tm">${fmt(c.t)}</span></button></li>`).join('');
+
+  function stateAt(time) {
+    const s = { lines: [[], []], partial: [null, null], tab: 0, view: 'term', caption: '', chapter: -1, card: null, notes: 0, bubble: null };
+    for (const e of ev) {
+      if (e.t > time) break;
+      switch (e.k) {
+        case 'line': s.lines[e.n].push(e.segs); break;
+        case 'type': s.partial[e.n] = e; break;
+        case 'commit': { const p = s.partial[e.n]; if (p) s.lines[e.n].push([[p.prefix, p.pcls], [p.text, p.tcls]]); s.partial[e.n] = null; break; }
+        case 'tab': s.tab = e.n; break;
+        case 'view': s.view = e.v; break;
+        case 'caption': s.caption = e.text; break;
+        case 'chapter': s.chapter = e.i; break;
+        case 'card': s.card = e.c; break;
+        case 'note': s.notes = e.i; break;
+        case 'bubble': s.bubble = { id: e.id, text: e.text }; break;
+        case 'bubbleEnd': if (s.bubble && s.bubble.id === e.id) s.bubble = null; break;
+      }
+    }
+    return s;
+  }
+
+  const segHtml = (segs) => segs.map(([text, cls]) => text ? `<span class="${cls}">${esc(text)}</span>` : '').join('');
+  let last = { term: '', tab: -1, view: '', cap: '', card: undefined, notes: -1, chapter: -2, bubble: -1 };
+  const bubbleEl = $('bubble'), bubbleText = $('bubbleText');
+
+  function render(time) {
+    const s = stateAt(time);
+    const n = s.tab;
+    let html = s.lines[n].map((l) => `<div class="ln">${segHtml(l)}</div>`).join('');
+    const p = s.partial[n];
+    if (p) {
+      const shown = time < p.start ? 0 : Math.min(p.text.length, Math.floor((time - p.start) / p.dur * p.text.length));
+      html += `<div class="ln">${segHtml([[p.prefix, p.pcls], [p.text.slice(0, shown), p.tcls]])}<span class="cursor"></span></div>`;
+    } else {
+      html += '<div class="ln"><span class="cursor"></span></div>';
+    }
+    // The bubble shows only over the terminal, never over the title card, end card or workbook.
+    const bubbleId = s.bubble && s.view === 'term' && !s.card ? s.bubble.id : 0;
+    if (bubbleId !== last.bubble) {
+      bubbleEl.hidden = !bubbleId;
+      if (bubbleId) bubbleText.textContent = s.bubble.text;
+      tbody.classList.toggle('has-bubble', Boolean(bubbleId));
+      last.bubble = bubbleId; last.term = '';
+    }
+    if (html !== last.term || n !== last.tab) { tbody.innerHTML = html; tbody.scrollTop = tbody.scrollHeight; last.term = html; }
+    if (n !== last.tab) { tabsEls.forEach((el, i) => el.classList.toggle('on', i === n)); last.tab = n; }
+    if (s.view !== last.view) { $('sheetWin').hidden = s.view !== 'sheet'; last.view = s.view; }
+    if (s.card !== last.card) { $('titleCard').hidden = s.card !== 'title'; $('endCard').hidden = s.card !== 'end'; last.card = s.card; }
+    if (s.notes !== last.notes) {
+      for (let i = 1; i <= 4; i++) $('n' + i).hidden = s.notes < i;
+      const mark = (sel, on) => document.querySelectorAll(sel).forEach((el) => el.classList.toggle('hl', on));
+      mark('.grid tr.hdr td', s.notes === 1);
+      document.querySelectorAll('.grid tr:not(.hdr) td[data-col="line_item_usage_account_id"]').forEach((el) => el.classList.toggle('hl', s.notes === 2));
+      document.querySelectorAll('.grid tr:not(.hdr) td[data-col="line_item_unblended_cost"]').forEach((el) => el.classList.toggle('hl', s.notes === 3));
+      $('sheetTab').classList.toggle('hl', s.notes === 4);
+      last.notes = s.notes;
+    }
+    const chapterName = s.chapter >= 0 ? `Step ${s.chapter + 1} of ${chapters.length}: ${chapters[s.chapter].name}.` : '';
+    const capHtml = s.card === 'title' ? '<strong>Ready.</strong> The recording starts with preparing two sample files.' : (chapterName ? `<strong>${esc(chapterName)}</strong> ${esc(s.caption)}` : esc(s.caption));
+    if (capHtml !== last.cap) { cap.innerHTML = capHtml; last.cap = capHtml; }
+    if (s.chapter !== last.chapter) {
+      document.querySelectorAll('#chapters button').forEach((b, i) => b.setAttribute('aria-current', String(i === s.chapter)));
+      last.chapter = s.chapter;
+    }
+    seek.value = String(Math.round(time));
+    timeEl.textContent = `${fmt(time)} / ${fmt(TOTAL)}`;
+  }
+
+  // Scale the fixed 1280x720 screen to the player width.
+  const stage = $('stage'), screen = $('screen');
+  // The simulated screen is always 720 units tall. Its height on the page is the smaller of a
+  // 16:9 shape and the window height minus the header, caption and controls. Its width in
+  // units grows with the player, so the terminal widens instead of leaving empty margins.
+  // In full screen the stage takes all the space left above the caption and controls instead.
+  const player = $('player');
+  const fit = () => {
+    const width = stage.clientWidth;
+    let height;
+    if (player.classList.contains('is-full')) {
+      stage.style.height = '';
+      height = stage.clientHeight;
+    } else {
+      height = Math.max(Math.min(width * 9 / 16, window.innerHeight - 340), Math.min(width * 9 / 16, 270));
+      stage.style.height = `${height}px`;
+    }
+    const scale = height / 720;
+    screen.style.width = `${Math.max(1280, width / scale)}px`;
+    screen.style.transform = `scale(${scale})`;
+  };
+  new ResizeObserver(fit).observe(stage); window.addEventListener('resize', fit); fit();
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // The recording starts at half speed, so viewers can read each prompt and answer.
+  let time = 0, playing = !reduce, speed = Number($('speed').value), prev = performance.now();
+  const setPlaying = (on) => {
+    playing = on; playBtn.textContent = on ? 'Pause' : 'Play'; prev = performance.now();
+    stage.classList.toggle('paused', !on);
+    $('bigplayIcon').textContent = on ? '❚❚' : '▶';
+    $('bigplay').setAttribute('aria-label', on ? 'Pause the walkthrough' : 'Play the walkthrough');
+  };
+  setPlaying(playing);
+
+  function frame(now) {
+    const dt = now - prev; prev = now;
+    if (playing) {
+      time = Math.min(TOTAL, time + dt * speed);
+      if (time >= TOTAL) setPlaying(false);
+    }
+    render(time);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  const togglePlay = () => { if (time >= TOTAL) time = 0; setPlaying(!playing); };
+  playBtn.addEventListener('click', togglePlay);
+  // A click anywhere on the screen, including the big button in its middle, pauses or resumes.
+  stage.addEventListener('click', togglePlay);
+  $('restart').addEventListener('click', () => { time = 0; setPlaying(true); });
+  seek.addEventListener('input', () => { time = Number(seek.value); });
+  $('speed').addEventListener('change', (e) => { speed = Number(e.target.value); });
+  $('chapters').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-i]'); if (!b) return;
+    time = chapters[Number(b.dataset.i)].t + 1; setPlaying(true);
+  });
+  // Full screen shows the whole player: the screen, the caption and the controls.
+  // Older Safari versions use webkit-prefixed names for the same commands.
+  const fullElement = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const onFullChange = () => {
+    const isFull = fullElement() === player;
+    player.classList.toggle('is-full', isFull);
+    $('full').textContent = isFull ? 'Exit full screen' : 'Full screen';
+    fit();
+  };
+  document.addEventListener('fullscreenchange', onFullChange);
+  document.addEventListener('webkitfullscreenchange', onFullChange);
+  $('full').addEventListener('click', () => {
+    if (fullElement()) {
+      const leave = document.exitFullscreen || document.webkitExitFullscreen;
+      if (leave) Promise.resolve(leave.call(document)).catch(() => {});
+      return;
+    }
+    const enter = player.requestFullscreen || player.webkitRequestFullscreen;
+    if (!enter) { $('full').textContent = 'Full screen is not available here'; return; }
+    Promise.resolve(enter.call(player)).catch(() => { $('full').textContent = 'Full screen is not available here'; });
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, select, button')) return;
+    if (e.key === ' ') { e.preventDefault(); setPlaying(!playing); }
+    if (e.key === 'ArrowRight') time = Math.min(TOTAL, time + 5000);
+    if (e.key === 'ArrowLeft') time = Math.max(0, time - 5000);
+  });
+})();
+</script>
+</body>
+</html>

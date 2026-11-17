@@ -1,0 +1,78 @@
+#!/bin/sh
+# Git pre-commit hook that stops a commit when the staged changes contain a secret.
+#
+# It checks two things:
+#   1. File names: SSH keys, private keys, certificates, .env files, AWS credential files and
+#      requirements workbooks (which hold private answers) are refused, even when they were
+#      added with "git add -f".
+#   2. File contents: every added line is searched for common secret formats, such as AWS
+#      access keys, private key blocks, API tokens and passwords written into code.
+#
+# Turn the hook on once per clone:   git config core.hooksPath .githooks
+# Allow one line that is a known false alarm by adding the text "secret-scan: allow" to it.
+# Skip the check for one commit (only when you are sure):   git commit --no-verify
+
+tab=$(printf '\t')
+found=0
+work=$(mktemp -d "${TMPDIR:-/tmp}/secret-scan.XXXXXX") || exit 1
+trap 'rm -rf "$work"' EXIT
+
+# ---- 1. File names that must never be committed.
+git diff --cached --name-only --diff-filter=ACMR |
+  grep -E '(^|/)\.ssh/|(^|/)id_(rsa|dsa|ecdsa|ed25519)|\.(pem|key|p12|pfx|jks|keystore|ppk|gpg|asc)$|(^|/)\.env(\.[^/]*)?$|(^|/)\.aws/|(^|/)credentials$|\.secret$|(^|/)secrets\.[^/]*$' \
+  > "$work/files"
+if [ -s "$work/files" ]; then
+  echo "Commit blocked: these files hold keys or secrets and must not be committed:"
+  sed 's/^/  /' "$work/files"
+  found=1
+fi
+
+# ---- 1b. Requirements workbooks, which hold answers that are kept privately in SharePoint.
+git diff --cached --name-only --diff-filter=ACMR |
+  grep -E '^docs/[^/]*\.xlsx$|(^|/)(getbill-)?pipeline-questions[^/]*\.xlsx$' > "$work/workbooks"
+if [ -s "$work/workbooks" ]; then
+  echo "Commit blocked: requirements workbooks hold answers, which stay in the private SharePoint copy:"
+  sed 's/^/  /' "$work/workbooks"
+  found=1
+fi
+
+# ---- 2. Secret formats inside the added lines.
+# Each added line is written as "path: text". This hook file is skipped, because it
+# contains the patterns themselves.
+git diff --cached -U0 --no-color --diff-filter=ACMR -- . ':(exclude).githooks/pre-commit' |
+  awk '/^\+\+\+ /{ file = substr($0, 7); next } /^\+/{ print file ": " substr($0, 2) }' |
+  grep -v 'secret-scan: allow' > "$work/added"
+
+# One pattern per line: a description, a tab, then an extended regular expression.
+cat > "$work/patterns" <<'PATTERNS'
+an AWS access key ID	(AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16}
+an AWS secret access key	(secret|aws).{0,30}[=:] *["']?[A-Za-z0-9/+]{40}([^A-Za-z0-9/+]|$)
+an AWS session token	aws_session_token *[=:] *["']?[A-Za-z0-9/+=]{20,}
+a private key	-----BEGIN [A-Z ]*PRIVATE KEY
+an SSH public key	ssh-(rsa|ed25519|dss) AAAA|ecdsa-sha2-nistp[0-9]+ AAAA
+a GitHub token	gh[pousr]_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}
+a Slack token	xox[abprs]-[A-Za-z0-9-]{10,}
+an API secret key	(sk|pk|rk)_(live|test)_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9_-]{20,}
+a Google API key	AIza[0-9A-Za-z_-]{35}
+a web sign-in token (JWT)	eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.
+a password or token written into the code	(password|passwd|pwd|secret|token|api_key|apikey) *[=:] *["'][^"' ]{6,}
+a URL with a user name and password	[a-z]+://[^/ :@]+:[^/ @]+@
+PATTERNS
+
+while IFS="$tab" read -r description pattern; do
+  if grep -Eq -- "$pattern" "$work/added"; then
+    echo "Commit blocked: the staged changes contain what looks like $description:"
+    # Show the file and the line with the secret replaced by [hidden], so the secret
+    # itself is never printed. Long lines are cut to 100 characters.
+    grep -E -- "$pattern" "$work/added" | sed -E "s#${pattern}#[hidden]#g" | cut -c1-100 | sed 's/^/  /'
+    found=1
+  fi
+done < "$work/patterns"
+
+if [ "$found" -ne 0 ]; then
+  echo
+  echo "Remove the files or lines listed above from the commit, then commit again."
+  echo "If a line is a false alarm, add the text \"secret-scan: allow\" to that line."
+  exit 1
+fi
+exit 0

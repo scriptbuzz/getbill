@@ -1,6 +1,6 @@
 # getBill requirements questionnaire
 
-_Last modified: 2026-11-17 13:25 EST_
+_Last modified: 2026-11-17 13:34 EST_
 
 This questionnaire collects what getBill must do, from where the billing files come from to how
 long they are kept. It is written for the product owner and the people who own the data and the
@@ -81,8 +81,12 @@ list:
 2. In Microsoft Lists, or on a SharePoint site, choose **New** › **List** › **From CSV**, and upload
    the file.
 3. On the column screen, keep **Title** as the question. Set **Section** and **Status** to
-   **Choice**. Set **Why it matters**, **Examples of possible answers**, **Answer** and **Notes** to
-   **Multiple lines of text**. Then choose **Create**.
+   **Choice**. Set **Why it matters**, **Examples of possible answers**,
+   **Answer** and **Notes** to **Multiple lines of text**. Then choose **Create**. The
+   **Classification** column says **Internal use only** on every row. The **Questions last
+   modified** and **Questions modified by** columns give the date and author of the version of
+   this page that the file was made from. A CSV file has no other place for these notes. Keep
+   those three columns as **Single line of text**.
 4. Add a **Person** column named **Expert** for the person who gave the answer, and, if you assign questions, a **Person** column
    named **Owner**. A CSV file cannot carry person columns, so they are added here.
 5. Edit the **Status** column's choices to **Not started**, **Answered**, **Needs discussion** and
@@ -291,5 +295,5 @@ applies to you, and what getBill should do when it happens. "Does not apply" is 
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:25 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:34 EST. Modified by: mbitar._
 <!-- /document-footer -->

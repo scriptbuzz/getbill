@@ -5,8 +5,14 @@ Every document carries two stamps:
   - A footer that says the document is for internal use only, gives the same date and time,
     and names who modified it.
 
-Supported documents are Markdown files, SVG diagrams, and HTML pages. In an SVG diagram or an
-HTML page, the script updates the elements with id="last-modified" and id="document-footer".
+Supported documents are Markdown files, SVG diagrams, HTML pages, and the plain-text LICENSE file.
+In an SVG diagram or an HTML page, the script updates the elements with id="last-modified" and
+id="document-footer". In a plain-text file, it writes the stamp under the first line and the footer
+after a line of three dashes at the end.
+
+The Microsoft Lists CSV file cannot hold a title or a footer, so scripts/export_questions.py copies
+the questionnaire's stamp into two columns of every row instead. Whenever this script stamps the
+questionnaire, it also regenerates that CSV file, so the two always carry the same date.
 Run the script after you change a document, so the stamps cannot fall out of date:
 
     python3 scripts/stamp_docs.py                  # stamps every document in the project
@@ -28,7 +34,9 @@ from typing import List
 
 ROOT = Path(__file__).resolve().parent.parent
 MODIFIED_BY = "mbitar"
-DOCUMENT_GLOBS = ["*.md", "docs/**/*.md", "docs/**/*.svg", "docs/**/*.html"]
+DOCUMENT_GLOBS = ["*.md", "docs/**/*.md", "docs/**/*.svg", "docs/**/*.html", "LICENSE"]
+PLAIN_TEXT_NAMES = {"LICENSE"}
+QUESTIONNAIRE = ROOT / "docs" / "getbill-pipeline-questions.md"
 FOOTER_START = "<!-- document-footer -->"
 FOOTER_END = "<!-- /document-footer -->"
 
@@ -75,6 +83,21 @@ def stamp_tagged(text: str, stamp: str) -> str:
     return text
 
 
+def stamp_plain(text: str, stamp: str) -> str:
+    """Update or add the stamp under the first line, and the footer at the end, of a text file."""
+    header = f"Last modified: {stamp}"
+    if re.search(r"^Last modified: [^\n]*$", text, flags=re.MULTILINE):
+        text = re.sub(r"^Last modified: [^\n]*$", header, text, count=1, flags=re.MULTILINE)
+    else:
+        text = re.sub(r"^([^\n]*\n)", rf"\1\n{header}\n", text, count=1)
+
+    footer = f"---\n{footer_sentence(stamp)}\n"
+    existing = re.compile(r"\n---\nInternal use only\. Last modified: [^\n]*\n?\Z")
+    if existing.search(text):
+        return existing.sub(lambda _: "\n" + footer, text)
+    return text.rstrip("\n") + "\n\n" + footer
+
+
 def all_documents() -> List[Path]:
     found = set()
     for pattern in DOCUMENT_GLOBS:
@@ -111,11 +134,17 @@ def main(argv=None) -> int:
             updated = stamp_markdown(original, stamp)
         elif path.suffix in (".svg", ".html"):
             updated = stamp_tagged(original, stamp)
+        elif path.name in PLAIN_TEXT_NAMES:
+            updated = stamp_plain(original, stamp)
         else:
-            print(f"Skipped {path.relative_to(ROOT)}, because only .md, .svg and .html files are supported.")
+            print(f"Skipped {path.relative_to(ROOT)}, because only .md, .svg, .html and LICENSE files are supported.")
             continue
         path.write_text(updated, encoding="utf-8")
         print(f"Stamped {path.relative_to(ROOT)} with {stamp}.")
+        if path == QUESTIONNAIRE:
+            sys.path.insert(0, str(ROOT / "scripts"))
+            import export_questions  # The Lists file copies the questionnaire's stamp.
+            export_questions.main([])
     if not paths:
         print("No documents needed a stamp.")
     return 0

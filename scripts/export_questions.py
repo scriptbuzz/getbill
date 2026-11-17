@@ -2,8 +2,11 @@
 
 The questionnaire in docs/getbill-pipeline-questions.md is the master copy of the questions. It holds no
 answers: the answers are kept in a private workbook or list outside the repository. This script
-reads the questionnaire's tables and writes one row for each question, with empty Answer, Status
-and Notes columns, so a private SharePoint list can be created from it with New list › From CSV.
+reads the questionnaire's tables and writes one row for each question, with empty Answer and Notes
+columns, a Status of "Not started", a Classification column that says "Internal use only", and
+the questionnaire's last-modified date and author, so a private SharePoint list can be created
+from it with New list › From CSV. Regenerate the file after the questionnaire changes, because the
+tests check that the two match.
 
     python3 scripts/export_questions.py
 
@@ -23,7 +26,15 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "docs" / "getbill-pipeline-questions.md"
 TARGET = ROOT / "docs" / "getbill-pipeline-questions-for-microsoft-lists.csv"
 COLUMNS = ["Title", "Question ID", "Section", "Why it matters", "Examples of possible answers",
-           "Answer", "Status", "Notes"]
+           "Answer", "Status", "Notes", "Classification", "Questions last modified",
+           "Questions modified by"]
+# A CSV file cannot carry a note above its header row, because Microsoft Lists reads the first
+# row as the column names. So every row carries the internal-use notice, and the date and author
+# of the questionnaire it was made from, in columns of its own. The names avoid "Modified" and
+# "Modified By", which every SharePoint list already has for the last change to each row.
+CLASSIFICATION = "Internal use only"
+STAMP = re.compile(r"^_Last modified: ([^_\n]+)_$", re.MULTILINE)
+AUTHOR = re.compile(r"Modified by: ([^.\s]+)\.")
 SECTION = re.compile(r"^## (\d+)\. (.+)$")
 GROUP = re.compile(r"^### (.+)$")
 # A question row has four cells: ID, question, why it matters, and examples of possible answers.
@@ -63,6 +74,9 @@ def parse_questions(markdown: str):
 
 def read_questions(markdown: str):
     """Yield one CSV row for each question, in the columns a Microsoft List is created from."""
+    stamp, author = STAMP.search(markdown), AUTHOR.search(markdown)
+    modified = stamp.group(1).strip() if stamp else ""
+    modified_by = author.group(1) if author else ""
     for item in parse_questions(markdown):
         section = f"{item['number']}. {item['section']}"
         yield {
@@ -74,6 +88,9 @@ def read_questions(markdown: str):
             "Answer": "",
             "Status": "Not started",
             "Notes": "",
+            "Classification": CLASSIFICATION,
+            "Questions last modified": modified,
+            "Questions modified by": modified_by,
         }
 
 

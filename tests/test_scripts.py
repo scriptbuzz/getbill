@@ -222,6 +222,54 @@ def test_the_committed_lists_file_matches_the_questionnaire_and_has_no_answers(l
         committed = list(csv.DictReader(handle))
     assert committed == expected
     assert all(row["Answer"] == "" and row["Notes"] == "" for row in committed)
+    assert all(row["Classification"] == "Internal use only" for row in committed)
+
+
+# ------------------------------------- the internal-use notice on every document
+
+NOTICE = "Internal use only"
+TEXT_DOCUMENTS = sorted({*ROOT.glob("*.md"), *DOCS.glob("*.md"), *DOCS.glob("*.svg"),
+                         *DOCS.glob("*.html"), ROOT / "LICENSE"})
+
+
+STAMP_TEXT = re.compile(r"Last modified: \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Z]{2,5}")
+FOOTER_TEXT = re.compile(STAMP_TEXT.pattern + r"\. Modified by: mbitar\.")
+
+
+@pytest.mark.parametrize("path", TEXT_DOCUMENTS, ids=lambda path: path.name)
+def test_every_text_document_has_the_notice_the_stamp_and_the_author(path):
+    text = path.read_text(encoding="utf-8")
+    assert NOTICE in text
+    assert len(STAMP_TEXT.findall(text)) >= 2  # One under the title and one in the footer.
+    assert FOOTER_TEXT.search(text)
+
+
+def test_every_lists_row_carries_the_notice_and_the_questionnaire_stamp():
+    markdown = (DOCS / "getbill-pipeline-questions.md").read_text(encoding="utf-8")
+    stamp = re.search(r"^_Last modified: ([^_\n]+)_$", markdown, re.MULTILINE).group(1)
+    with (DOCS / "getbill-pipeline-questions-for-microsoft-lists.csv").open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    assert rows and all(row["Classification"] == NOTICE for row in rows)
+    assert all(row["Questions last modified"] == stamp and row["Questions modified by"] == "mbitar" for row in rows)
+
+
+def test_every_worksheet_of_the_workbook_has_the_notice_the_stamp_and_the_author():
+    pytest.importorskip("openpyxl")
+    from openpyxl import load_workbook
+    workbook = load_workbook(DOCS / "getbill-pipeline-questions.xlsx")
+    assert all(FOOTER_TEXT.search(sheet.oddFooter.left.text or "") for sheet in workbook.worksheets)
+    about = [str(cell.value) for row in workbook["About"].iter_rows() for cell in row if cell.value]
+    assert any(STAMP_TEXT.fullmatch(value) for value in about)
+    assert any(FOOTER_TEXT.search(value) and NOTICE in value for value in about)
+
+
+def test_restamping_a_plain_text_file_does_not_repeat_the_stamps(load_script):
+    stamp_plain = load_script("stamp_docs").stamp_plain
+    once = stamp_plain("TITLE\n\nBody text.\n", "2026-01-01 09:00 EST")
+    twice = stamp_plain(once, "2026-01-02 10:00 EST")
+    assert once.startswith("TITLE\n\nLast modified: 2026-01-01 09:00 EST\n\nBody text.\n")
+    assert once.endswith("\n---\nInternal use only. Last modified: 2026-01-01 09:00 EST. Modified by: mbitar.\n")
+    assert twice == once.replace("2026-01-01 09:00", "2026-01-02 10:00")
 
 
 def test_the_workbook_script_does_not_replace_an_existing_workbook(load_script, tmp_path):

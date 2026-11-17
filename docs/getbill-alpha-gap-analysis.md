@@ -1,6 +1,6 @@
 # getBill alpha: what the prototype does today
 
-_Last modified: 2026-11-17 13:03 EST_
+_Last modified: 2026-11-17 13:18 EST_
 
 This note is for the engineering team. It records what the getBill alpha prototype can and cannot
 do, so that its gaps can be compared with the product owner's answers in the
@@ -44,9 +44,15 @@ dropped because nobody needs it.
 | 13 | Does not archive, apply retention rules, or delete anything. | A1 to A5 |
 | 14 | Copies each file to the computer while it converts it. A crash could leave that copy behind. | P12 |
 | 15 | Has never been run against real AWS accounts or real billing exports. | O6 |
+| 16 | Has not been tested with AWS GovCloud (US). When a profile names no AWS Region, getBill signs in through the standard `us-east-1` Region, which a GovCloud profile cannot use. | C11 |
+| 17 | Does not use AWS's FIPS 140 validated endpoints, and does not check that the computer's own encryption libraries are FIPS validated. | C12 |
+| 18 | Has no security controls mapped to any framework, such as NIST SP 800-53, NIST SP 800-171, FedRAMP or CMMC, and no system security plan. | C9, C10 |
+| 19 | Ships no secure software development attestation, software bill of materials (SBOM), or vulnerability disclosure policy. | C13 |
+| 20 | Has not been checked for accessibility. The workbooks and web pages have not been tested against Section 508. | C14 |
+| 21 | Cannot limit who runs it or from where. Access depends entirely on each person's AWS permissions. | C15 |
 
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:03 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
 <!-- /document-footer -->

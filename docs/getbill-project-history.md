@@ -1,6 +1,6 @@
 # getBill project history
 
-_Last modified: 2026-11-17 13:10 EST_
+_Last modified: 2026-11-17 13:18 EST_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -28,6 +28,7 @@ planned releases.
 | 0.1.0-alpha.11 | 2026-11-17 | The questionnaire holds questions only, and the answers are kept in a private workbook. |
 | 0.1.0-alpha.12 | 2026-11-17 | Every document in `docs/` was renamed to start with `getbill-`. |
 | 0.1.0-alpha.13 | 2026-11-17 | The Git history was reset to one commit, and this page was added. |
+| 0.1.0-alpha.14 | 2026-11-17 | The questionnaire gained nine questions about government customers and federal compliance, and the engineering note gained the matching gaps. |
 
 ## Decisions and the reasons for them
 
@@ -97,6 +98,11 @@ planned releases.
 - The [questionnaire](getbill-pipeline-questions.md) holds the questions only. The answers are kept
   in a private workbook in SharePoint or OneDrive, which is the source of truth for the
   requirements. Git ignores requirements workbooks, and the pre-commit hook refuses them.
+- On 2026-11-17, no compliance or security framework had been chosen. Because most customers are
+  expected to be U.S. federal agencies, questions C7 to C15 were added to ask about government
+  customers, Controlled Unclassified Information, frameworks such as FedRAMP and NIST SP 800-53,
+  AWS GovCloud (US), FIPS 140 encryption, security documents, Section 508 accessibility, and limits
+  on who may see the data. The engineering note lists the matching gaps as limitations 16 to 21.
 
 ### Documents
 
@@ -110,5 +116,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:10 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
 <!-- /document-footer -->

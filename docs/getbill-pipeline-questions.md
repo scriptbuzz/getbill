@@ -1,6 +1,6 @@
 # getBill requirements questionnaire
 
-_Last modified: 2026-11-17 13:03 EST_
+_Last modified: 2026-11-17 13:18 EST_
 
 This questionnaire collects what getBill must do, from where the billing files come from to how
 long they are kept. It is written for the product owner and the people who own the data and the
@@ -186,11 +186,20 @@ python3 scripts/export_questions.py
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
 | C1 | How must people and automated jobs sign in to AWS? | Shared keys are hard to control and to revoke. | IAM Identity Center (SSO) for people. IAM roles for automated jobs. No long-term access keys. |
-| C2 | How sensitive is this data, and how is it classified? | Account names, tags and resource IDs can reveal customers, projects or people. | Confidential. Internal. Contains personal data. |
-| C3 | Which rules apply, such as contracts, data protection laws or internal policies? | Rules can limit where data goes and who may see it. | Customer contracts. Vietnam's personal data protection rules. Company security policy. |
+| C2 | How sensitive is this data, and how is it classified? | Account names, tags and resource IDs can reveal customers, projects or people. | Confidential. Internal. Contains personal data. Controlled Unclassified Information (CUI) as marked by a government customer. |
+| C3 | Which rules apply, such as contracts, data protection laws or internal policies? | Rules can limit where data goes and who may see it. | Customer contracts. U.S. federal contract clauses. Vietnam's personal data protection rules. The EU General Data Protection Regulation. Company security policy. |
 | C4 | Must there be an audit record of who ran what, when, on which files? | Audits and incident reviews need it. | Yes, kept for one year. Yes, through AWS CloudTrail. No. |
 | C5 | How must data be encrypted in transit and at rest? | Billing data is confidential. | AWS defaults. A company-managed key for everything. |
 | C6 | Who must approve sharing billing data outside the company? | Sending customer costs to the wrong place is a serious incident. | The data owner. Legal. Security. |
+| C7 | Are any customers government organizations, and which kinds? | Government customers bring their own security rules, which decide much of the design. | No government customers. U.S. federal civilian agencies. The U.S. Department of Defense. U.S. state or local governments. Governments outside the United States. |
+| C8 | How will government customers receive getBill or its results? | A tool FPT runs for a customer, a hosted service, and software installed in the customer's own accounts each fall under different government rules. | FPT runs getBill on FPT's systems and sends the results. FPT hosts getBill as an online service. The customer installs and runs getBill in its own AWS accounts. Not decided yet. |
+| C9 | Is any of the billing data Controlled Unclassified Information (CUI), or covered by another government handling rule? | CUI must be protected under NIST SP 800-171, and Defense work may also require CMMC certification. | No. Yes, where the contract marks it as CUI. For some customers only. Not known yet. |
+| C10 | Which compliance frameworks, certifications or authorizations must getBill or its operator meet? | The framework sets the security controls, documents and assessments needed before going live. | None. FedRAMP at the Moderate or High level. An agency's authorization to operate (ATO) under NIST SP 800-53. NIST SP 800-171. CMMC Level 2. SOC 2. ISO 27001. |
+| C11 | In which AWS environments are the billing files and results stored? | AWS GovCloud (US) has its own Regions, accounts and sign-in, separate from the standard AWS Regions. | Standard AWS Regions. AWS GovCloud (US). Both. AWS Secret or Top Secret Regions. |
+| C12 | Must the encryption use cryptographic modules validated under FIPS 140? | Many government contracts require validated encryption for every connection that carries their data. | No. Yes, for every connection to AWS. Yes, for customer data only. |
+| C13 | Which security documents must come with getBill for buyers or auditors? | Government buyers often require proof of secure development before they use software. | None. A signed secure software development attestation. A software bill of materials (SBOM). A vulnerability disclosure policy. A system security plan. |
+| C14 | Must the results meet accessibility rules? | Section 508 requires files and web pages delivered to U.S. federal agencies to work with assistive technology. | No. Section 508 for every workbook and page. Only for results sent to customers. |
+| C15 | Are there limits on who may run getBill or see the data, or on where they work? | Some government contracts and AWS GovCloud (US) workloads allow only certain people, or only work from certain countries. | No limits. U.S. persons only. Work from the United States only. Named people with a background check. |
 
 ## 7. Data quality and reconciliation
 
@@ -276,5 +285,5 @@ applies to you, and what getBill should do when it happens. "Does not apply" is 
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:03 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 13:18 EST. Modified by: mbitar._
 <!-- /document-footer -->

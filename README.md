@@ -1,13 +1,13 @@
-# getBill v0.1.0-alpha.16
+# getBill v0.1.0-alpha.17
 
-_Last modified: 2026-11-17 13:34 EST_
+_Last modified: 2026-11-17 18:07 EST_
 
 <p align="center">
   <img src=".github/banner.svg" alt="getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks: CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3." width="900">
 </p>
 
 <p align="center">
-  <img alt="Version 0.1.0-alpha.16" src="https://img.shields.io/badge/version-0.1.0--alpha.16-FF9900">
+  <img alt="Version 0.1.0-alpha.17" src="https://img.shields.io/badge/version-0.1.0--alpha.17-FF9900">
   <img alt="License: proprietary, FPT use only" src="https://img.shields.io/badge/license-proprietary%2C%20FPT%20only-B42318">
   <img alt="Python 3.9 or newer" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&amp;logoColor=white">
   <img alt="Input: CSV or Parquet" src="https://img.shields.io/badge/input-CSV%20%7C%20Parquet-0E7C86">
@@ -32,7 +32,7 @@ one at a time in the terminal. The original CSV and Parquet files are never chan
 
 > [!NOTE]
 > This is an alpha release. It works, but it is still changing and has not yet been tested on real
-> AWS accounts. `getbill --version` prints `0.1.0a16`.
+> AWS accounts. `getbill --version` prints `0.1.0a17`.
 
 ## Features
 
@@ -260,8 +260,8 @@ of the latest run. The tests run:
 | `tests/test_cli.py` | Complete runs against a simulated S3: the same bucket, another bucket, another account, existing workbooks (ask, overwrite, skip, add the time, one answer for all), a file that fails among good ones, an expired SSO sign-in, wrong options, and Ctrl+C |
 | `tests/test_aws.py` | Sign-in failures (unknown profile, expired SSO, rejected or missing credentials), folder names, and the existence check when S3 says yes, no, or "not allowed" |
 | `tests/test_prompts.py` | Every kind of terminal question, including how it repeats after an invalid answer |
-| `tests/test_scripts.py` | The version bump script, the document stamp script, and the CUR 2.0 sample script |
-| `tests/test_hooks.py` | The secret check before each commit and the version check before each push, in throwaway Git repositories |
+| `tests/test_scripts.py` | The version bump script, the document stamp script, and the CUR 2.0 sample script. It also checks that the questionnaire holds questions only, that the Microsoft Lists file and the blank workbook template hold the same questions with no answers, that Git ignores every other requirements workbook, and that every document carries the notice, the date and the author |
+| `tests/test_hooks.py` | The secret check before each commit, including the check that refuses a template holding an answer, and the version check before each push, in throwaway Git repositories |
 
 ### How the tests stand in for AWS
 
@@ -307,8 +307,8 @@ To run the tests on your computer:
 ## Versions
 
 Every push to GitHub carries a new version number. The number is set in one place,
-`src/getbill/__init__.py`, in Python's format, such as `0.1.0a16`. People see it in a longer form,
-such as `v0.1.0-alpha.16`, in this README's title and badge, on both demo pages, and in the banner.
+`src/getbill/__init__.py`, in Python's format, such as `0.1.0a17`. People see it in a longer form,
+such as `v0.1.0-alpha.17`, in this README's title and badge, on both demo pages, and in the banner.
 
 Before each push, raise the version. The script updates every place that shows it:
 
@@ -360,6 +360,16 @@ text `secret-scan: allow` to that line, and the hook skips it.
 To skip the check for one commit, use `git commit --no-verify`. Do this only when you are sure
 that the commit contains no secret.
 
+## Project documents
+
+| Document | What it holds |
+| --- | --- |
+| [Restart guide](docs/getbill-restart-guide.md) | Where the project stands, how to set up a computer, the routine steps for each kind of change, and the open questions. Read it first after a break. |
+| [Project history](docs/getbill-project-history.md) | Every version, and the reasons behind the main design decisions. |
+| [Requirements questionnaire](docs/getbill-pipeline-questions.md) | The questions for the product owner. The answers are kept privately, not in this repository. |
+| [Engineering note](docs/getbill-alpha-gap-analysis.md) | What the alpha does today and its known limitations. |
+| [Flow diagram](docs/getbill-flow-diagram.svg) | How getBill moves files from S3, through the computer, and back to S3. |
+
 ## License
 
 getBill is proprietary software owned by FPT. It is not free software and it is not open source
@@ -391,5 +401,5 @@ Without `--changed`, the script stamps every document. You can also name the fil
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:34 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 18:07 EST. Modified by: mbitar._
 <!-- /document-footer -->

@@ -1,6 +1,6 @@
 # getBill project history
 
-_Last modified: 2026-11-17 13:34 EST_
+_Last modified: 2026-11-17 18:07 EST_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -31,6 +31,7 @@ planned releases.
 | 0.1.0-alpha.14 | 2026-11-17 | The questionnaire gained nine questions about government customers and federal compliance, and the engineering note gained the matching gaps. |
 | 0.1.0-alpha.15 | 2026-11-17 | The blank requirements workbook is kept in the repository as a template, and a check refuses it once it holds any answer. |
 | 0.1.0-alpha.16 | 2026-11-17 | Every document carries the internal-use notice, the last-modified date and time, and "Modified by: mbitar", including LICENSE and every row of the Microsoft Lists file. A test checks every document. |
+| 0.1.0-alpha.17 | 2026-11-17 | The test that checks which workbooks Git ignores works inside the test container again, and the restart guide was added. |
 
 ## Decisions and the reasons for them
 
@@ -72,6 +73,10 @@ planned releases.
 - GitHub Actions runs the tests on Python 3.9 and 3.12, and the code coverage must reach 80%.
   GitHub's own machines stopped offering Python 3.9, so each Python version runs inside its
   official Docker image.
+- Inside that image the tests run as a user who does not own the checked-out files, and Git
+  refuses to work in such a folder unless it is marked safe. A test that calls Git therefore marks
+  the folder safe for that one Git command, and fails with Git's own error message when Git fails
+  for any other reason.
 - The tests run only when something other than documents, the README banner, the license or the
   version line changes. A scheduled run every Monday at 06:00 UTC catches new library releases, and
   the workflow can also be started by hand.
@@ -122,5 +127,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:34 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-17 18:07 EST. Modified by: mbitar._
 <!-- /document-footer -->

@@ -2,6 +2,7 @@
 questionnaire exports, which must never carry answers into the repository."""
 
 import csv
+import os
 import re
 import shutil
 import subprocess
@@ -288,7 +289,14 @@ def test_the_workbook_script_does_not_replace_an_existing_workbook(load_script, 
     ("pipeline-questions.xlsx", True),
 ])
 def test_git_keeps_only_the_blank_workbook_template(name, ignored):
-    result = subprocess.run(["git", "check-ignore", "--no-index", "-q", name], cwd=ROOT, capture_output=True)
+    # In the CI container the checkout belongs to another user, and Git refuses such a folder
+    # unless it is marked safe. The setting applies to this one Git command only.
+    env = dict(os.environ, GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="safe.directory", GIT_CONFIG_VALUE_0="*")
+    result = subprocess.run(
+        ["git", "check-ignore", "--no-index", "-q", name], cwd=ROOT, capture_output=True, text=True, env=env,
+    )
+    # Exit code 0 means ignored and 1 means not ignored. Any other code means Git itself failed.
+    assert result.returncode in (0, 1), result.stderr
     assert (result.returncode == 0) is ignored
 
 

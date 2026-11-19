@@ -1,6 +1,6 @@
 # getBill v0.1.0-alpha.24
 
-_Last modified: 2026-11-19 14:29 EST_
+_Last modified: 2026-11-19 16:38 EST_
 
 _Version: 0.1.0-alpha.24_
 
@@ -375,6 +375,10 @@ that the commit contains no secret.
 | [Flow diagram](docs/getbill-flow-diagram.svg) | How getBill moves files from S3, through the computer, and back to S3. |
 | [AWS architecture diagram](docs/getbill-aws-architecture.svg) | How the planned getBill platform in AWS collects the daily billing exports from customer accounts in AWS, Microsoft Azure and Google Cloud, converts them to FOCUS 1.2, and shows them in dashboards. It uses the official AWS, Azure and Google Cloud icons. |
 
+The AWS architecture diagram is built by `scripts/build_architecture_diagram.py` from the official
+AWS, Microsoft Azure and Google Cloud icon packages. The icon packages are not kept in this
+repository; the script's notes say where to download them and how to run it.
+
 ## License
 
 getBill is proprietary software owned by FPT. It is not free software and it is not open source
@@ -384,19 +388,19 @@ GitHub does not give anyone permission to use, copy or share it.
 
 ## Document stamps
 
-Every document in this project carries a "Last modified" stamp under its title and a footer. The
-footer says the document is for internal use only, gives the same date and time, and names who
-modified it. This covers the Markdown files, the diagrams and web pages in `docs/`, and `LICENSE`.
+Every document in this project carries a "Last modified" stamp under its title, followed by the
+getBill version, and a footer. The footer says the document is for internal use only, gives the
+same version, date and time, and names who modified it. This covers the Markdown files, the diagrams and web pages in `docs/`, and `LICENSE`.
 Two files cannot hold a footer, so they carry the same information another way:
 
-- The requirements workbook shows the stamp and the footer on its About worksheet, and the footer
-  is printed at the bottom of every worksheet.
+- The requirements workbook shows the stamp and the footer on its About worksheet, and the footer,
+  with the version, is printed at the bottom of every worksheet.
 - The Microsoft Lists CSV file has a **Classification** column that says "Internal use only", and
   **Questions last modified** and **Questions modified by** columns, on every row.
 
 After you change a document, run the stamp script so that both stamps show the time of the
-change and the current getBill version. The version script runs the stamp script itself, so every
-document in a push shows the version that the push carries. When it stamps the questionnaire, it also regenerates the Lists CSV file:
+change and the current getBill version. When it stamps the questionnaire, it also regenerates the
+Lists CSV file:
 
 ```bash
 python3 scripts/stamp_docs.py --changed
@@ -404,8 +408,12 @@ python3 scripts/stamp_docs.py --changed
 
 Without `--changed`, the script stamps every document. You can also name the files to stamp.
 
+The version script runs the stamp script itself with `--unpushed`, so every document in a push
+shows the version that the push carries. The pre-push hook refuses a push that changes a document
+without the new version.
+
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 14:29 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 16:38 EST. Modified by: mbitar._
 <!-- /document-footer -->

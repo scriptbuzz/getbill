@@ -1,8 +1,8 @@
 # getBill product document
 
-_Last modified: 2026-11-19 14:27 EST_
+_Last modified: 2026-11-19 16:38 EST_
 
-_Version: 0.1.0-alpha.23_
+_Version: 0.1.0-alpha.24_
 
 This document describes what getBill is, who it serves, what each release must do, and how it is
 built. It is the reference for product and design decisions from now on. When a decision changes,
@@ -187,7 +187,8 @@ Data Catalog and queried with Amazon Athena:
 4. **Output.** Issued bills and reports, with every version kept.
 
 When a component finishes, it publishes an Amazon EventBridge event, and AWS Step Functions starts
-the next step.
+the next step. The [AWS architecture diagram](getbill-aws-architecture.svg) shows how the billing
+data from AWS, Azure and Google Cloud reaches the raw zone and moves on to the dashboards.
 
 ### The common format
 
@@ -297,5 +298,5 @@ workbooks. It is a prototype for parts of this design:
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.23. Last modified: 2026-11-19 14:27 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 16:38 EST. Modified by: mbitar._
 <!-- /document-footer -->

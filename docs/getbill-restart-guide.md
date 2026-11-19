@@ -1,6 +1,6 @@
 # getBill restart guide
 
-_Last modified: 2026-11-19 14:29 EST_
+_Last modified: 2026-11-19 16:38 EST_
 
 _Version: 0.1.0-alpha.24_
 
@@ -27,6 +27,16 @@ These facts were true on 2026-11-19, at version 0.1.0-alpha.24.
   [product document](getbill-product.md). getBill is a billing product first, release 1 covers AWS
   and Azure, and the security target is the NIST SP 800-53 Revision 5 Moderate baseline. Read the
   product document before any design work.
+- FPT resells AWS to its customers, so the questions and the design cover reseller billing: FPT's
+  payer accounts, AWS Billing Conductor, and the price that FPT charges each customer.
+- The requirements questionnaire has 216 questions in 23 sections that cover the full FinOps scope.
+- The [slide presentation](getbill-product-overview.pdf) presents getBill as a FinOps solution in
+  26 slides. Its charts use sample figures.
+- The [AWS architecture diagram](getbill-aws-architecture.svg) shows the planned design for
+  collecting billing data from AWS, Azure and Google Cloud. Nothing in it is built yet. It agrees
+  with the product document.
+- Every document shows the getBill version next to its date and time, under the title and in the
+  footer. The version script and the pre-push hook keep the version current.
 - The repository lives at `github.com/scriptbuzz/getbill`, and all work happens on the `main`
   branch. GitHub Pages publishes the `docs/` folder at `https://scriptbuzz.github.io/getbill/`.
 
@@ -97,6 +107,19 @@ HTML page needs two elements first, one with `id="last-modified"` and one with
 `id="document-footer"`, which the script then fills in. Every file name in `docs/` starts with
 `getbill-`, except `index.html` and `.nojekyll`, which GitHub Pages needs.
 
+### A change to the AWS architecture diagram
+
+The diagram is built by a script from the official icon packages of AWS, Microsoft Azure and
+Google Cloud. The icon packages are not kept in the repository. The script's notes say where to
+download them and how to unzip them. Change the layout or the text in the script, not in the SVG
+file, then rebuild the diagram:
+
+```bash
+python3 -I scripts/build_architecture_diagram.py <icons folder> docs/getbill-aws-architecture.svg
+```
+
+Open the diagram in a browser afterward and check that no text is clipped or overlapping.
+
 ### A change to the requirements questions
 
 The questionnaire [getbill-pipeline-questions.md](getbill-pipeline-questions.md) holds the
@@ -158,7 +181,18 @@ release table in the [project history](getbill-project-history.md), and run the 
 4. **The old walkthrough address no longer works.** The page moved from `run-recording.html` to
    `getbill-run-recording.html`. A small page at the old address that sends visitors to the new one
    would repair saved links.
-5. **GitHub may still show the old commits.** The Git history was reset to one commit on
+5. **The slide presentation does not show the version yet.** The PDF is built outside the
+   repository, so the stamp script cannot reach it. Add the version and the date to the title
+   slide the next time the slides are rebuilt, and keep the slide files in the repository.
+6. **Two sign-in choices in the architecture are still proposals.** For Azure, the design proposes
+   an Entra ID application that trusts a signed token from AWS, so that no secret is stored. For
+   Google Cloud, it proposes Workload Identity Federation for the AWS Glue job that reads BigQuery.
+   Both must be tested before they are relied on.
+7. **The test packages are not installed on the current Mac.** The project's `.venv` folder lacks
+   pytest and openpyxl, so run step 4 of "Set up a computer" before running the tests there. Until
+   then, `/usr/bin/python3` has openpyxl and can rebuild the blank workbook, and GitHub Actions runs
+   the full tests on every push.
+8. **GitHub may still show the old commits.** The Git history was reset to one commit on
    2026-11-17. GitHub can keep serving an old commit to anyone who has its direct link until GitHub
    removes unreferenced commits. A scan on 2026-11-16 found no secret in any old commit, so this is
    a matter of tidiness, not of security.
@@ -176,11 +210,12 @@ release table in the [project history](getbill-project-history.md), and run the 
 | [getbill-pipeline-questions-for-microsoft-lists.csv](getbill-pipeline-questions-for-microsoft-lists.csv) | The same questions as a file that Microsoft Lists can import. |
 | [getbill-alpha-gap-analysis.md](getbill-alpha-gap-analysis.md) | What the alpha does today and its 21 known limitations, each linked to the questions it depends on. |
 | [getbill-flow-diagram.svg](getbill-flow-diagram.svg) | A diagram of how getBill moves files from S3, through the computer, and back to S3. |
+| [getbill-aws-architecture.svg](getbill-aws-architecture.svg) | The planned AWS architecture that collects billing data from AWS, Azure and Google Cloud, converts it to FOCUS 1.2 and shows it in dashboards. `scripts/build_architecture_diagram.py` builds it. |
 | [getbill-run-recording.html](getbill-run-recording.html) | A step-by-step walkthrough of one getBill run, published on GitHub Pages. |
 | [LICENSE](../LICENSE) | The proprietary license. Only FPT employees and contractors may use getBill. |
 
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 14:29 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 16:38 EST. Modified by: mbitar._
 <!-- /document-footer -->

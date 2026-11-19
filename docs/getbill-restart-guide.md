@@ -1,6 +1,6 @@
 # getBill restart guide
 
-_Last modified: 2026-11-19 09:04 EST_
+_Last modified: 2026-11-19 09:39 EST_
 
 This guide is for anyone who picks up getBill after a break. It says where the project stands, how
 to set up a computer to work on it, which routine steps each kind of change needs, and which
@@ -9,7 +9,7 @@ project got here and why the main decisions were made.
 
 ## Where the project stands
 
-These facts were true on 2026-11-19, at version 0.1.0-alpha.19.
+These facts were true on 2026-11-19, at version 0.1.0-alpha.20.
 
 - getBill works as an interactive command-line tool. It converts CSV and Parquet files, including
   AWS CUR 2.0 billing exports, from an S3 folder into Excel workbooks, and uploads the workbooks to
@@ -139,12 +139,13 @@ Then add a row for the new version to the release table in the
 
 1. **The compliance target may still rise.** The project owner chose the NIST SP 800-53
    Revision 5 Moderate baseline as the design target on 2026-11-19, without seeking a formal
-   authorization yet. Questions C7 to C15 in the questionnaire ask the product owner about
+   authorization yet. Questions C3 to C7, C12, C14 and C15 in the questionnaire ask the product owner about
    government customers, Controlled Unclassified Information, AWS GovCloud (US), FIPS 140
    encryption, security documents, Section 508 accessibility, and limits on who may see the data.
    Their answers may require a stricter target.
-2. **The questionnaire has no answers yet.** If a private workbook was created before version
-   0.1.0-alpha.14, it lacks questions C7 to C15, and someone must copy them into it by hand.
+2. **The questionnaire has no answers yet.** The questions were rewritten on 2026-11-19 to cover
+   the full FinOps scope, and their numbers changed. A private workbook made from an earlier version
+   must be re-created from the new blank workbook.
 3. **getBill has never run against real AWS.** The engineering note lists 21 known limitations.
    The first ones to check on real billing exports are gzip-compressed CSV files (limitation 1),
    month subfolders and the export's manifest file (limitation 2), and the Excel row limit
@@ -176,5 +177,5 @@ Then add a row for the new version to the release table in the
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 09:04 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
 <!-- /document-footer -->

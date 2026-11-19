@@ -42,9 +42,14 @@ MODIFIED_BY = "mbitar"
 
 # Short worksheet names, by section number. Excel allows at most 31 characters.
 SHEET_NAMES = {
-    "0": "0 Goals", "1": "1 Source", "2": "2 Recipients", "3": "3 Processing",
-    "4": "4 Sending back", "5": "5 Archiving", "6": "6 Security", "7": "7 Quality",
-    "8": "8 Operations", "9": "9 Limits", "10": "10 Scenarios",
+    "0": "0 Goals", "1": "1 People", "2": "2 Accounts and access",
+    "3": "3 Cost data", "4": "4 Allocation", "5": "5 Pricing and invoicing",
+    "6": "6 Reporting", "7": "7 Delivery", "8": "8 Anomalies",
+    "9": "9 Budgets and forecasts", "10": "10 Unit economics", "11": "11 Commitments and rates",
+    "12": "12 Workload optimization", "13": "13 Licenses and SaaS", "14": "14 Sustainability",
+    "15": "15 Governance", "16": "16 Onboarding", "17": "17 Security",
+    "18": "18 Quality and month close", "19": "19 Retention", "20": "20 Integrations",
+    "21": "21 Operations", "22": "22 Today's process",
 }
 
 # The status choices, with the fill color each one gets in the Status column.

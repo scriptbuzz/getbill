@@ -173,7 +173,7 @@ def test_csv_export_keeps_the_section_title_and_subgroup(load_script):
 
 def test_workbook_has_one_worksheet_per_section(load_script):
     workbook = load_script("export_questions_xlsx").build(QUESTIONNAIRE, "2026-01-01 09:00 EST")
-    assert workbook.sheetnames == ["About", "Summary", "0 Goals", "1 Source", "10 Scenarios"]
+    assert workbook.sheetnames == ["About", "Summary", "0 Goals", "1 People", "10 Unit economics"]
     assert workbook["About"]["A2"].value == "Last modified: 2026-01-01 09:00 EST"
 
     goals = workbook["0 Goals"]
@@ -184,14 +184,14 @@ def test_workbook_has_one_worksheet_per_section(load_script):
     assert goals["G2"].value == "Not started"
     assert str(goals.data_validations.dataValidation[0].sqref) == "G2:G1000"
 
-    scenarios = workbook["10 Scenarios"]
+    scenarios = workbook["10 Unit economics"]
     assert [cell.value for cell in scenarios[1]][:3] == ["ID", "Group", "Question"]
     assert scenarios["B2"].value == "Everyday use"
     assert scenarios["H2"].value == "Not started"
 
     summary = workbook["Summary"]
-    assert summary["C4"].value == "=COUNTA('10 Scenarios'!A2:A1000)"
-    assert summary["D4"].value == "=COUNTIF('10 Scenarios'!H2:H1000,\"Not started\")"
+    assert summary["C4"].value == "=COUNTA('10 Unit economics'!A2:A1000)"
+    assert summary["D4"].value == "=COUNTIF('10 Unit economics'!H2:H1000,\"Not started\")"
     assert summary["A5"].value == "All sections"
 
 
@@ -330,10 +330,10 @@ def test_the_committed_workbook_is_blank_and_holds_every_question(load_script):
 
 
 @pytest.mark.parametrize("sheet, heading, value", [
-    ("6 Security", "Answer", "FedRAMP Moderate"),
+    ("17 Security", "Answer", "FedRAMP Moderate"),
     ("0 Goals", "Expert", "A. Person"),
-    ("1 Source", "Notes", "Ask finance."),
-    ("10 Scenarios", "Status", "Agreed"),
+    ("1 People", "Notes", "Ask finance."),
+    ("10 Unit economics", "Status", "Agreed"),
 ])
 def test_a_workbook_with_any_answer_is_not_blank(load_script, tmp_path, sheet, heading, value):
     pytest.importorskip("openpyxl")

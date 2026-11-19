@@ -1,6 +1,6 @@
 # getBill product document
 
-_Last modified: 2026-11-19 08:28 EST_
+_Last modified: 2026-11-19 09:39 EST_
 
 This document describes what getBill is, who it serves, what each release must do, and how it is
 built. It is the reference for product and design decisions from now on. When a decision changes,
@@ -238,7 +238,7 @@ runs the same components with its own storage and its own encryption key.
 - The GovCloud version must address two known limits. AWS Data Exports does not run in GovCloud, so
   billing files must be copied in from the commercial partition. Some Quick Sight features differ
   in GovCloud.
-- Questions C7 to C15 in the [requirements questionnaire](getbill-pipeline-questions.md) ask the
+- Questions C3 to C7, C12, C14 and C15 in the [requirements questionnaire](getbill-pipeline-questions.md) ask the
   product owner about government customers, Controlled Unclassified Information, FIPS 140
   encryption, Section 508 accessibility and limits on who may see the data. Their answers may
   raise this target.
@@ -295,5 +295,5 @@ workbooks. It is a prototype for parts of this design:
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 08:28 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
 <!-- /document-footer -->

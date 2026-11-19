@@ -1,6 +1,6 @@
 # getBill requirements questionnaire
 
-_Last modified: 2026-11-17 13:34 EST_
+_Last modified: 2026-11-19 09:39 EST_
 
 This questionnaire collects what getBill must do, from where the billing files come from to how
 long they are kept. It is written for the product owner and the people who own the data and the
@@ -31,9 +31,8 @@ How to answer:
 - Answer for what the business needs, not for what any existing tool can do today. getBill will be
   built to match these answers.
 - Questions in **section 0** shape everything else, so they are the best place to start.
-- **Section 10** describes everyday situations, such as month-end close, a customer who leaves
-  mid-month, or a late billing file. It works well as a workshop with the people who live through
-  these situations.
+- Answer **section 2**, billing accounts and access, early. Getting access to each billing source
+  takes the longest, because each account owner must approve it.
 
 ## Answering together in Excel
 
@@ -108,192 +107,347 @@ only, so it is safe to keep in the repository:
 python3 scripts/export_questions.py
 ```
 
-## 0. Goals and users
+## About this version of the questions
+
+On 2026-11-19 the questions were rewritten to cover everything getBill needs as a full FinOps
+tool, not only billing. The sections follow the capabilities of the FinOps Framework published by
+the FinOps Foundation, with extra sections for billing, security and operations. Each question asks
+one thing. The question numbers are new, so a private copy made from an earlier version of this
+page must be re-created from the new blank workbook.
+
+## 0. Goals and scope
 
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| G1 | What business problem should getBill solve, and how will you know it is solved? | The goal decides every other answer and how success is measured. | Finance gets monthly cost reports without manual work. Each customer receives an accurate statement within three business days. Costs are charged back to departments. |
-| G2 | Whose AWS costs are these: FPT's own accounts, FPT's customers' accounts, or both? | Billing your own usage and rebilling customers have different rules, recipients and confidentiality. | FPT's internal accounts only. Customer accounts that FPT resells or manages. Both, kept separate. |
-| G3 | Who will use getBill, and how technical are they? | It decides the kind of interface and how much must be automatic. | Cloud engineers. Finance analysts. Account managers. Customers themselves. |
-| G4 | How should people use it? | A command line, a web page and a fully automatic service are very different products. | A command line. A web page. A request by email or chat. Fully automatic with no person involved. |
-| G5 | What should the result look like for each audience? | The output format decides the processing and the delivery. | Excel workbooks. CSV files. PDF statements. A dashboard such as Amazon QuickSight. Rows in a data warehouse. An API. |
-| G6 | Which languages and number formats must the output use? | Recipients may expect their local language and formats. | English. Vietnamese. Both. Decimal comma or decimal point. |
-| G7 | Which currency must the results show, and where do exchange rates come from? | AWS bills in US dollars, but recipients may need another currency. | US dollars only. Vietnamese dong at the bank's month-end rate. Both side by side. |
-| G8 | Is there a deadline or a first milestone? | It decides what to build first. | A first customer report by a given date. Internal use first, customers later. |
+| G1 | What business problem must getBill solve first? | It sets the priority for every later decision. | Bill customers accurately each month. Show each team what it spends. Cut cloud waste. |
+| G2 | How will you measure whether getBill is successful? | A measurable target shows whether the work paid off. | Every bill issued by the third business day. Fewer billing disputes. Cloud spend reduced by 10%. |
+| G3 | Is getBill for FPT's own cloud costs, for customers' costs, or for both? | Rebilling customers and managing internal costs have different rules and different users. | FPT's own costs. Customers' costs. Both. |
+| G4 | Which capabilities must the first release include? | It decides the scope of the first release. | Billing and invoicing only. Billing plus dashboards and budgets. Full FinOps, including savings recommendations. |
+| G5 | Which capabilities can wait for later releases? | It keeps the first release small enough to deliver. | Forecasting. Savings recommendations. Carbon reporting. |
+| G6 | Is there a date by which the first release must be in use? | A date decides what can fit in the first release. | A date tied to a customer contract. The start of the fiscal year. No fixed date. |
+| G7 | Who makes the final decision when two requirements conflict? | Someone must settle trade-offs quickly. | The product owner. A steering group. The head of finance. |
+| G8 | Will getBill be offered to other companies, or used only by FPT and its customers? | Offering it to other companies adds licensing, support and stricter separation of data. | FPT and its customers only. Offered to other companies later. Not decided. |
+| G9 | Which existing tools must getBill replace, and which must it work alongside? | Overlap with other tools wastes money and confuses users. | Replaces the Excel workbooks. Works alongside AWS Cost Explorer. Replaces a commercial FinOps tool. |
+| G10 | What budget is there to build getBill? | The budget limits the scope and the size of the team. | A fixed amount for the first year. Funded one release at a time. |
+| G11 | What budget is there to run getBill each month? | Cloud storage, queries and dashboards cost money every month. | A fixed monthly limit. A share of the cloud spend it manages. Charged to customers. |
 
-## 1. Source: where the billing files come from
-
-| # | Question | Why it matters | Examples of possible answers |
-| --- | --- | --- | --- |
-| S1 | Which team or person owns the billing data, and who is the contact when a file is late or wrong? | Someone must fix a broken or missing file. | The cloud operations team. The finance team. An AWS partner or reseller portal. |
-| S2 | What produces the billing files? | Each source has its own columns, names and layout. | AWS Data Exports (CUR 2.0). The older AWS Cost and Usage Report. AWS Data Exports in the FOCUS format. A reseller or partner billing portal. Another internal system. |
-| S3 | Which AWS accounts do the files cover, and in which account is the export created? | An export in the management (payer) account covers every account. One in a member account covers only that account. | One management account for the whole organization. Several organizations. Each customer's own account. |
-| S4 | Are there several sources that must be combined, such as several AWS organizations or other clouds? | Combining sources needs matching rules. | One AWS organization. Several organizations. AWS plus Azure or Google Cloud. |
-| S5 | Which columns, filters and details does the export include? | Columns and details decide file size and what recipients can see. | All columns. Selected columns only. Resource IDs included or not. Split cost allocation data for containers. |
-| S6 | What time detail does the export have? | Hourly data is many times larger than daily or monthly data. | Hourly. Daily. Monthly. |
-| S7 | In which file formats and compression do the files arrive, now and in the future? | The pipeline must read every format that arrives. | Parquet with Snappy, gzip or Zstandard compression. CSV compressed with gzip. ZIP archives. Plain CSV. Excel. JSON. |
-| S8 | Where exactly are the files stored, and how are they organized? | The pipeline must find the right files for each month. | An S3 bucket with one folder for each month, such as `BILLING_PERIOD=2026-10`. Several part files for each month. A manifest file that lists the parts. A shared drive. An email attachment. |
-| S9 | Should all parts of a month be treated as one data set? | Recipients usually expect one result for each month. | Yes, always join the parts. No, keep each part separate. |
-| S10 | How often do new or updated files arrive? | It decides when processing runs. | Several times a day. Once a day. Once a month after the month closes. |
-| S11 | Can a closed month change later, and what should happen then? | AWS can restate a month after credits or refunds. Recipients need final numbers and need to know when numbers change. | Ignore changes after the deadline. Reprocess and send a corrected version. Send only the differences. |
-| S12 | How large is a typical file, and how large is the largest you expect? | Size decides speed, cost and which output formats can hold the data. | A few megabytes. Hundreds of megabytes. Several gigabytes each month. |
-| S13 | In which AWS Regions are the files stored? | Moving data across Regions costs more and may be restricted. | One Region. Several Regions. Data must stay in a given country. |
-| S14 | Who may write the files, and who may read them? | Each writer and reader needs its own permissions. | Only AWS Data Exports writes. Only the getBill service reads. Engineers may also read. |
-| S15 | How are the source files encrypted, and who controls the keys? | A customer-managed key needs permission for every reader. | S3-managed keys. An AWS KMS key owned by the security team. |
-| S16 | How long are source files kept, and can earlier versions be recovered? | An overwritten file can be lost for good. | Kept forever. Kept for 13 months. S3 versioning turned on. |
-
-## 2. Recipients and delivery
+## 1. People and roles
 
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| D1 | Who receives the results? | The recipients decide the content, the format and who may see what. | The finance team. Budget owners for each department. Each customer. Auditors. |
-| D2 | How should each recipient receive the results? | Many recipients cannot use cloud storage directly. | An email attachment. A link that expires. A shared drive such as SharePoint or Google Drive. An S3 bucket in their own AWS account. A web portal. |
-| D3 | Should each recipient see only part of the data? | Sending all lines to everyone can expose other customers' or departments' costs. | Only their own AWS accounts. Only their cost center or tag. Everything. |
-| D4 | How should results be named and organized? | Clear names stop people from opening the wrong month or customer. | By month. By month and customer. By month, customer and version number. |
-| D5 | Who may read and who may change the delivered results? | Billing results are confidential. | Only the recipient. The recipient and finance. Read-only for everyone. |
-| D6 | Should recipients be told when results are ready, and how? | Without a notice, people use old results or keep checking. | An email. A chat message in Teams or Slack. No notice. |
-| D7 | What should happen when results for the same month already exist? | Recipients need to know which version is current. | Replace them. Keep both with a version number. Keep both and mark the old one as replaced. |
-| D8 | May results be delivered into another organization's AWS account, and under what rules? | Cross-organization delivery needs agreements and permissions. | Yes, into each customer's own account. No, only into FPT's accounts. |
+| W1 | Which groups of people will use getBill? | Each group needs its own views and permissions. | The FinOps team. Finance. Engineering teams. Executives. Account managers. Customers. |
+| W2 | Roughly how many people in each group will use getBill? | The number of users decides licensing costs and portal capacity. | Five FinOps staff. Fifty engineers. Two hundred customer users. |
+| W3 | Is there a FinOps team today, and who is on it? | A FinOps team usually owns getBill's rules and reviews. | A dedicated team. Part of the cloud team. No team yet. |
+| W4 | Who is responsible for cloud costs in each business unit or customer? | Reports and alerts need a named person who can act on them. | Each engineering manager. Each customer's finance contact. A central team. |
+| W5 | Which groups may change data or settings, and which may only view? | It defines the roles and permissions in getBill. | Finance approves bills. Engineers only view. Account managers change pricing rules. |
+| W6 | How technical are the main users? | It decides how much must work without writing queries. | Mostly finance staff who use Excel. Engineers who write SQL. A mix. |
+| W7 | Which languages must the screens and reports support? | Users may need their own language. | English. Vietnamese. Both. |
+| W8 | Do customers' own staff need to sign in to getBill? | Customer access needs a customer portal and strict separation of each customer's data. | Yes, for every customer. Only for some customers. No, they only receive files. |
+| W9 | Which sign-in system must FPT staff use? | Staff should sign in with the accounts they already have. | Microsoft Entra ID. Okta. AWS IAM Identity Center. |
+| W10 | Which sign-in system must customers use? | Customers may want to use their own organization's accounts. | Each customer's own identity provider. Accounts that getBill creates. |
+| W11 | Must customers be able to manage their own users, or does a central administrator do it? | Letting customers manage their users saves FPT staff time. | A central administrator only. Each customer manages its own users. |
+| W12 | What training or help must users get? | Users who do not understand the numbers stop using the tool. | Written guides. Short videos. Training sessions. Explanations inside the screens. |
 
-## 3. Processing and content
-
-| # | Question | Why it matters | Examples of possible answers |
-| --- | --- | --- | --- |
-| P1 | What content should each audience receive? | Raw lines, summaries and statements are different products. | Every line item. Totals by account, service, Region or tag. Pivot tables. Charts. An invoice-style statement. |
-| P2 | Which cost measure should recipients see? | Each measure gives a different total. | Unblended cost. Net cost after discounts. Amortized cost for Savings Plans and Reserved Instances. Public list price. |
-| P3 | Should prices be changed before recipients see them? | Resellers often add a margin, apply a discount, or remove AWS credits. | No changes. Add a markup percentage. Apply a customer-specific discount. Hide credits. |
-| P4 | Which columns should recipients see, with what names and in what order? | Raw technical column names are hard for finance users. | All original columns. A short list with plain names. Different columns for each audience. |
-| P5 | How should values be shown? | Wrong types break totals and change account IDs. | Costs as numbers with two decimal places. Account IDs as text. Dates in a set format. |
-| P6 | Which time zone should dates and times use? | Daily totals change with the time zone. | UTC. Vietnam time. Each recipient's own time zone. |
-| P7 | How should tax, credits, refunds and support fees be treated? | They change the totals recipients see. | Show them as separate lines. Include them in the totals. Leave them out. |
-| P8 | Where and how should processing run? | It decides reliability, cost and who must be available. | On a person's computer when needed. A scheduled job in AWS. Automatically each time a new file arrives. |
-| P9 | What should happen when a month is too large for the chosen output format? | Excel, email and some tools have size limits. | Split it into several sheets or files. Summarize it. Use a different format for large months. |
-| P10 | What should happen when one file or one recipient fails? | One failure should not block everyone else. | Continue with the others and report the failure. Stop everything until it is fixed. |
-| P11 | Must processing be safe to run again for the same month? | Re-runs happen after failures and restatements. | Yes, a re-run must give the same results without duplicates. |
-| P12 | May billing data be copied to a person's computer during processing? | Copies on laptops can leak. | Yes. Only to company-managed computers. No, it must stay in AWS. |
-
-## 4. Sending results back
+## 2. Billing accounts and access
 
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| R1 | After processing, who must receive what, besides the recipients in section 2? | The data owner or finance may need a copy or a confirmation. | A copy to finance. A confirmation to the data owner. Nothing more. |
-| R2 | Does anyone need a receipt for each run? | A receipt shows that nothing was lost. | A list of files, row counts and totals. A signed summary. No receipt. |
-| R3 | Who must be told about failures, and how quickly? | A failure nobody sees means missing reports. | The operations team within an hour. The product owner by the next morning. |
-| R4 | Do recipients send anything back, such as approvals, disputes or corrections? | Some processes need a sign-off for each month. | Approval by email. Disputes through a ticket system. Nothing. |
+| B1 | Which clouds hold the costs that getBill must cover now? | Each cloud needs its own connection. | AWS. Microsoft Azure. Google Cloud. Oracle Cloud. |
+| B2 | Which clouds will be added in the next two years? | Planning for them now avoids a redesign later. | Google Cloud. Oracle Cloud. None. |
+| B3 | For each customer and each cloud, who owns the billing account: FPT or the customer? | The owner sets up the billing export and approves access to it. | FPT owns all of them. Each customer owns its own. It differs by customer and by cloud. |
+| B4 | How many AWS organizations, Azure billing accounts and Google Cloud billing accounts are there? | Each one needs its own connection and permissions. | One AWS organization. Ten customer AWS organizations. Three Azure billing accounts. |
+| B5 | Which Microsoft agreement does each Azure billing account use? | Each agreement type offers different billing exports and permissions. | Enterprise Agreement. Microsoft Customer Agreement. Cloud Solution Provider. Pay-as-you-go. |
+| B6 | Through which AWS partner program does FPT resell AWS? | The program decides which billing data, discounts and tools FPT receives from AWS. | The AWS Solution Provider Program. Through an AWS distributor. Both. |
+| B7 | May getBill read billing data directly from a customer's cloud account? | Direct access needs the customer's approval and a trust relationship between the accounts. | Yes, through a read-only role. No, the customer must send files. Each customer chooses. |
+| B8 | Who at each customer approves giving getBill access to its billing data? | Access stalls without a named approver. | The customer's cloud administrator. Its security team. Its finance lead. |
+| B9 | May getBill store long-lived keys or passwords to reach a billing source? | Stored keys must be rotated and can leak. | No, short-lived access only. Yes, if rotated every 90 days. Only for SaaS vendors. |
+| B10 | How quickly must getBill's access be removed when a customer leaves? | Access that is left in place is a security risk. | The same day. Within a week. At the end of the contract. |
+| B11 | Does FPT also resell Microsoft Azure or Google Cloud? | Reselling another cloud adds that provider's partner billing data and rules. | Microsoft Cloud Solution Provider. Google Cloud partner reselling. AWS only. |
+| B12 | Does FPT use AWS Billing Conductor today? | AWS Billing Conductor already applies a reseller's own prices, so getBill may use it or replace it. | Yes, for every customer. For some customers. No. |
+| B13 | May resold customers use AWS's own cost tools, such as AWS Cost Explorer, in their accounts? | Customers who see AWS's prices in those tools can find different numbers from FPT's bill. | Yes, showing FPT's prices. Yes, showing AWS's public prices. No access. |
 
-## 5. Archiving and retention
-
-| # | Question | Why it matters | Examples of possible answers |
-| --- | --- | --- | --- |
-| A1 | How long must source files and results be kept, and why? | Audit, tax and contract rules can set minimum periods. | Ten years for tax records. Seven years under a contract. Thirteen months. |
-| A2 | Where should archives be kept? | Old files cost less in cheaper storage. | S3 Glacier after 90 days. A separate archive account. A records system. |
-| A3 | Must archives be impossible to change or delete? | Auditors may need proof that records were not altered. | Yes, with S3 Object Lock. No. |
-| A4 | When must files be deleted, and who approves it? | Keeping data too long can also break policy or contracts. | Automatically after the retention period. Only with the data owner's approval. |
-| A5 | Should every version of a month's results be kept, or only the latest? | Earlier versions show what recipients saw on each date. | Every version. Only the final version. |
-
-## 6. Security and compliance
-
-| # | Question | Why it matters | Examples of possible answers |
-| --- | --- | --- | --- |
-| C1 | How must people and automated jobs sign in to AWS? | Shared keys are hard to control and to revoke. | IAM Identity Center (SSO) for people. IAM roles for automated jobs. No long-term access keys. |
-| C2 | How sensitive is this data, and how is it classified? | Account names, tags and resource IDs can reveal customers, projects or people. | Confidential. Internal. Contains personal data. Controlled Unclassified Information (CUI) as marked by a government customer. |
-| C3 | Which rules apply, such as contracts, data protection laws or internal policies? | Rules can limit where data goes and who may see it. | Customer contracts. U.S. federal contract clauses. Vietnam's personal data protection rules. The EU General Data Protection Regulation. Company security policy. |
-| C4 | Must there be an audit record of who ran what, when, on which files? | Audits and incident reviews need it. | Yes, kept for one year. Yes, through AWS CloudTrail. No. |
-| C5 | How must data be encrypted in transit and at rest? | Billing data is confidential. | AWS defaults. A company-managed key for everything. |
-| C6 | Who must approve sharing billing data outside the company? | Sending customer costs to the wrong place is a serious incident. | The data owner. Legal. Security. |
-| C7 | Are any customers government organizations, and which kinds? | Government customers bring their own security rules, which decide much of the design. | No government customers. U.S. federal civilian agencies. The U.S. Department of Defense. U.S. state or local governments. Governments outside the United States. |
-| C8 | How will government customers receive getBill or its results? | A tool FPT runs for a customer, a hosted service, and software installed in the customer's own accounts each fall under different government rules. | FPT runs getBill on FPT's systems and sends the results. FPT hosts getBill as an online service. The customer installs and runs getBill in its own AWS accounts. Not decided yet. |
-| C9 | Is any of the billing data Controlled Unclassified Information (CUI), or covered by another government handling rule? | CUI must be protected under NIST SP 800-171, and Defense work may also require CMMC certification. | No. Yes, where the contract marks it as CUI. For some customers only. Not known yet. |
-| C10 | Which compliance frameworks, certifications or authorizations must getBill or its operator meet? | The framework sets the security controls, documents and assessments needed before going live. | None. FedRAMP at the Moderate or High level. An agency's authorization to operate (ATO) under NIST SP 800-53. NIST SP 800-171. CMMC Level 2. SOC 2. ISO 27001. |
-| C11 | In which AWS environments are the billing files and results stored? | AWS GovCloud (US) has its own Regions, accounts and sign-in, separate from the standard AWS Regions. | Standard AWS Regions. AWS GovCloud (US). Both. AWS Secret or Top Secret Regions. |
-| C12 | Must the encryption use cryptographic modules validated under FIPS 140? | Many government contracts require validated encryption for every connection that carries their data. | No. Yes, for every connection to AWS. Yes, for customer data only. |
-| C13 | Which security documents must come with getBill for buyers or auditors? | Government buyers often require proof of secure development before they use software. | None. A signed secure software development attestation. A software bill of materials (SBOM). A vulnerability disclosure policy. A system security plan. |
-| C14 | Must the results meet accessibility rules? | Section 508 requires files and web pages delivered to U.S. federal agencies to work with assistive technology. | No. Section 508 for every workbook and page. Only for results sent to customers. |
-| C15 | Are there limits on who may run getBill or see the data, or on where they work? | Some government contracts and AWS GovCloud (US) workloads allow only certain people, or only work from certain countries. | No limits. U.S. persons only. Work from the United States only. Named people with a background check. |
-
-## 7. Data quality and reconciliation
+## 3. Cost data sources
 
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| Q1 | How should the results be checked against the source? | A mismatch means lost or changed data. | Totals must match exactly. Totals must match to the cent. Row counts must match. |
-| Q2 | Must the results match the AWS invoice for each month? | Finance reconciles against the invoice. | Yes, exactly. Yes, within a stated tolerance. No. |
-| Q3 | When is a month final? | Reporting before AWS closes a month gives numbers that change later. | When AWS issues the invoice. A fixed number of days after the month ends. |
-| Q4 | What should happen when the source file's columns or layout change? | A changed export can silently break reports. | Stop and alert. Continue and warn. Adapt automatically. |
-| Q5 | Who signs off that the results are correct before they are sent? | Errors in customer statements are costly. | Finance reviews each month. Automatic checks are enough. |
+| S1 | Which billing data must getBill read from each cloud? | Each export has a different level of detail. | AWS Cost and Usage Report 2.0. The AWS export in the FOCUS format. Azure Cost Management exports. Google Cloud's billing export to BigQuery. |
+| S2 | Must getBill store all cost data in FOCUS, the common billing format of the FinOps Foundation? | A common format makes costs from different clouds comparable. | Yes, FOCUS for everything. FOCUS plus each cloud's own detail. No preference. |
+| S3 | How many months of past cost data must getBill load when it starts? | Trends and forecasts need history. | Three months. Thirteen months. Three years. |
+| S4 | How up to date must the cost data be? | Fresher data costs more to process. | Updated daily. Updated several times a day. Monthly is enough. |
+| S5 | Do you need costs by the hour, by the day or by the month? | Hourly data is much larger, but it shows usage patterns. | By the hour. By the day. By the month. |
+| S6 | Must getBill show the cost of each individual resource, such as each server or storage bucket? | Resource detail makes the data much larger, but it shows exactly what costs money. | Yes, always. Only for savings work. No, totals are enough. |
+| S7 | Must getBill include purchases made through cloud marketplaces? | Marketplace purchases appear on the cloud bill but belong to other vendors. | Yes. No. Only for some customers. |
+| S8 | Must getBill include costs from SaaS vendors? | SaaS bills arrive in different forms and need their own readers. | Microsoft 365. Datadog. Snowflake. None. |
+| S9 | Must getBill include costs from data centers, private clouds or software licenses outside the cloud? | The total cost of technology needs every source. | On-premises servers. VMware. Oracle licenses. No. |
+| S10 | Must getBill split the costs of shared Kubernetes clusters by team or application? | Shared clusters hide who uses what. | Amazon EKS. Azure Kubernetes Service. Google Kubernetes Engine. No containers. |
+| S11 | Must getBill read the providers' list prices and FPT's negotiated prices? | Prices are needed to show discounts and estimate savings. | Yes, both. List prices only. No. |
+| S12 | Who is the contact when a provider's billing data is late or wrong? | Someone must chase the provider or the customer. | The cloud team. The customer's administrator. FPT's account manager. |
 
-## 8. Operations
-
-| # | Question | Why it matters | Examples of possible answers |
-| --- | --- | --- | --- |
-| O1 | Who owns and supports getBill, and who is the backup? | Someone must fix it when it fails, even during holidays. | The cloud team, with a named backup. The finance systems team. |
-| O2 | By what date or time must results be ready each month? | A deadline decides the schedule and the alerts. | By the third business day. Within one day of each new file. |
-| O3 | What budget is there to run it? | Storage, processing and data transfer cost money every month. | A fixed monthly limit. Charged back to each recipient. |
-| O4 | How many accounts, customers, files and recipients must it handle now, and in two years? | Growth can pass limits that are safe today. | Ten accounts and one recipient now. Hundreds of customers later. |
-| O5 | How should changes to getBill be approved, tested and released? | Untested changes can corrupt reports. | Automatic tests and a review for every change. A test month before each release. |
-| O6 | What must be tested with real data before getBill is trusted? | A test with real data shows real sizes, formats and permissions. | One full month for one account. A parallel run beside the current process. |
-| O7 | Is there a current manual process that getBill replaces, and when can it stop? | A safe switch-over needs both to run for a while. | An analyst exports Excel files by hand each month. Nothing exists yet. |
-
-## 9. Limits and volumes
+## 4. Allocation and tagging
 
 | # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| L1 | What is the most rows one month can have? | Excel holds at most 1,048,576 rows in one sheet, and other formats have their own limits. | Under one million. Several million. Not known yet. |
-| L2 | What is the most columns a file can have? | Some exports add one column for each tag key and grow very wide. Excel holds at most 16,384 columns. | Under 150. Several hundred. Not known yet. |
-| L3 | How many decimal places must costs keep, and may they be rounded? | Excel keeps only 15 significant digits, so very precise large numbers lose digits. | Keep all decimal places. Round to two places for reports. Round only in summaries. |
-| L4 | What is the range of values, from the largest credit to the largest single cost? | A range check catches broken data. | Credits down to minus 100,000 dollars. Single lines up to one million dollars. |
-| L5 | What range of dates must be handled, and how precise must times be? | Some tools only store dates in a set range or to the millisecond. | The last ten years. Times to the second. |
-| L6 | What is the longest text in one field, such as a list of tags? | Excel holds at most 32,767 characters in one cell. | Short tag lists. Hundreds of tags on some resources. |
-| L7 | What is the largest result a recipient can receive and open? | Email systems often refuse attachments over about 20 to 25 MB, and very large workbooks open slowly. | Under 10 MB by email. Any size through a link. |
-| L8 | How many files can one month or one run contain, and how long may a run take? | Scheduled jobs often have time limits. | Up to 100 files. A run must finish within one hour. |
-| L9 | How long can names be, such as customer names, file names and folder paths? | Some systems limit name lengths, such as Excel sheet names at 31 characters. | Short codes. Full customer names. |
-| L10 | What is the largest number of accounts, tag keys and recipients in one month? | Large numbers change how results are split and delivered. | Fifty accounts and twenty tag keys. Thousands of accounts. |
+| T1 | How should costs be grouped in reports? | The grouping becomes the structure of every report. | By customer, then project. By business unit, cost center and application. By environment. |
+| T2 | How is each customer's or team's usage identified in each cloud? | getBill must know which costs belong to whom. | Whole accounts, subscriptions or projects. Tags or labels on resources. A mix of both. |
+| T3 | Is there a tagging policy today, and which tags does it require? | Assigning costs by tags only works when the tags are applied. | Owner, cost center and environment are required. No policy yet. |
+| T4 | What share of costs is tagged correctly today? | Poor tagging means much of the cost cannot be assigned. | More than 90%. About half. Unknown. |
+| T5 | What should happen to costs that cannot be assigned to anyone? | Costs that belong to nobody must still appear somewhere. | Show them as unassigned. Spread them in proportion to spend. Charge them to a central budget. |
+| T6 | May getBill assign costs with its own rules when tags are missing? | Rules can assign costs without changing the cloud resources. | Yes, by account name. Yes, by a mapping table. No. |
+| T7 | How should shared costs, such as support plans, networking and security tools, be divided? | Each shared cost needs a rule for dividing it. | In proportion to spend. Evenly. By fixed percentages. Not divided. |
+| T8 | How should commitment discounts, such as Savings Plans and reservations, be assigned? | The choice changes each team's or customer's cost. | To the accounts that used them. To the account that bought them. Kept centrally. |
+| T9 | How should credits and refunds be assigned? | Credits can be large, and passing them on is a business decision. | To the account that earned them. Kept by FPT. Shared across all customers. |
+| T10 | How should tax be shown? | Tax rules differ by country and by customer. | As a separate line. Included in each line. Not shown. |
+| T11 | How often may the allocation rules change? | Frequent changes make month-to-month comparisons harder. | Monthly. Quarterly. Rarely. |
+| T12 | When an allocation rule changes, should past months be recalculated? | Recalculating changes reports that people have already used. | Yes, always. No, only future months. Only with approval. |
+| T13 | Who approves changes to allocation rules? | A rule change moves money between teams or customers. | Finance. The FinOps team. Each customer. |
 
-## 10. Scenarios and use cases
+## 5. Pricing, invoicing and chargeback
 
-Each row describes a situation that billing pipelines commonly meet. For each one, say whether it
-applies to you, and what getBill should do when it happens. "Does not apply" is a useful answer.
-
-### Everyday use
-
-| # | Scenario | Why it matters | Examples of possible answers |
+| # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| U1 | **Month-end close.** A month ends and AWS finalizes its costs. What should happen, and by when? | This is usually the main reason a billing pipeline exists. | Monthly reports for every recipient by the third business day. One summary for finance, then statements for customers. |
-| U2 | **Costs so far this month.** Someone wants to see the current month's costs before it ends. Should getBill support that, and how often? | Month-to-date reports help people act before the month closes, but the numbers still change. | A daily update marked "not final". A weekly update. Only final months. |
-| U3 | **Customer statements.** Each customer receives a statement of their AWS costs. What must a statement contain? | Statements often become invoices, so errors cost money and trust. | Totals by service and account. Every line item. FPT's logo and terms. A statement number. |
-| U4 | **Chargeback or showback inside the company.** Costs are assigned to departments, projects or cost centers. How are they assigned? | Assigning costs needs clear rules for tags, accounts and shared costs. | By the `CostCenter` tag. By AWS account. By AWS Cost Categories. Untagged costs go to a shared pool. |
-| U5 | **Budget tracking.** Someone compares spending with a budget. Should getBill show budgets, and warn when one is exceeded? | Budget warnings need the budget figures and a rule for when to warn. | Show spending against each department's budget. Warn at 80% and at 100%. Not needed, because AWS Budgets is used. |
-| U6 | **A sudden jump in cost.** Costs rise unexpectedly, for example after a mistake. Should getBill point it out? | Catching a spike early can save a great deal of money. | Highlight any service that costs 50% more than last month. Not needed, because AWS Cost Anomaly Detection is used. |
-| U7 | **Forecast.** Someone wants to know what the month or the year will cost. Should getBill estimate it? | A forecast needs history and a chosen method. | An end-of-month estimate from the daily average. Not needed. |
-| U8 | **One-off request.** Someone asks for a specific extract, such as one account's database costs for last quarter. How should such requests be handled? | One-off requests are common and often urgent. | Anyone can run a filtered report themselves. Requests go to the cloud team. Not supported. |
-| U9 | **Audit request.** An auditor asks for the billing records of a past period. What must be produced, and how fast? | Audits need complete, unchanged records and proof of where they came from. | The original files and the results for any month in the last ten years, within five business days. |
+| I1 | Must getBill produce customer invoices, internal chargeback, or reports for information only? | An invoice is a legal document, and a report for information only is not. | Customer invoices. Internal chargeback. Information only. Several of these. |
+| I2 | Is getBill's bill the official invoice, or does an accounting system issue the invoice? | An accounting system needs the data in its own format. | getBill issues the invoice. SAP issues it. QuickBooks issues it. |
+| I3 | Which kinds of pricing rules apply to customers? | Pricing rules decide what each customer pays. | A markup percentage. A discount. A fixed monthly fee. Different rates for each service. |
+| I4 | Do customers receive the discounts that FPT gets from the providers? | Passing discounts on is a business decision that changes FPT's margin. | Yes, all of them. Part of them. No. |
+| I5 | Who may change a customer's pricing rules? | A pricing change affects revenue. | Account managers. Finance. The product owner. |
+| I6 | Must every pricing change be approved before it takes effect? | Approval stops mistakes before they reach an invoice. | Yes, by finance. Only above a set amount. No. |
+| I7 | When a price changes partway through a month, which rate applies to which days? | Two rates in one month need a clear rule. | The new rate from the day of the change. The new rate from the next month. |
+| I8 | How often is each customer billed? | It sets the billing schedule. | Monthly. Quarterly. It differs by customer. |
+| I9 | By which day must each bill be issued? | The deadline sets the processing schedule. | The fifth business day. The tenth day of the month. |
+| I10 | Must someone approve each bill before it is sent? | Approval catches errors before customers see them. | Yes, finance approves every bill. Only bills above a set amount. No. |
+| I11 | In which currency must bills be issued? | Customers may need their local currency. | US dollars. Vietnamese dong. The customer's choice. |
+| I12 | Where do exchange rates come from, and which day's rate is used? | The rate changes the amount owed. | The bank's month-end rate. The provider's rate. A fixed rate each quarter. |
+| I13 | Do any providers bill in a currency other than US dollars? | Totals in different currencies must be converted before they can be added. | All in US dollars. Azure bills some customers in local currency. |
+| I14 | What must each bill show? | The content decides how customers can check the bill. | Totals by service. Totals by account. Every line item. A comparison with last month. |
+| I15 | How must amounts on a bill be rounded? | Rounding each line or only the total changes the amount owed. | Round only the total. Round each line to two decimal places. |
+| I16 | How are billing disputes raised and handled? | Disputes need an owner and a process. | Through the account manager. Through a support ticket. By email to finance. |
+| I17 | How is a correction issued after a bill was sent? | A wrong bill must be replaced in a way that can be traced. | A credit note. A corrected bill. An adjustment on the next month's bill. |
+| I18 | Must getBill track whether customers have paid? | Payment tracking belongs to accounting unless getBill must do it. | No, the accounting system tracks it. Yes, show paid and unpaid bills. |
+| I19 | Which discounts and credits does FPT receive from AWS as a reseller? | These discounts set FPT's margin on each customer. | A partner discount on all usage. Discounts on certain services. Program credits. |
+| I20 | Should customers' bills start from AWS public prices or from FPT's own cost? | Starting from public prices keeps FPT's discount private, and starting from cost shows it. | Public prices minus a customer discount. FPT's cost plus a markup. It differs by customer. |
+| I21 | How should AWS Support be charged to resold customers? | A reseller can provide support itself or pass on AWS's support charge. | FPT's own support fee. AWS's support charge passed on. Included in the markup. |
+| I22 | Which taxes does FPT charge customers on resold AWS usage? | Resale adds taxes that do not appear on AWS's own bill. | Vietnam value-added tax. U.S. sales tax. It depends on the customer's country. |
+| I23 | Do resold customers have a minimum monthly spend or a fixed contract term? | A customer who spends less than the minimum must be charged the difference. | A monthly minimum. A yearly commitment. Neither. |
 
-### Changes to customers and accounts
+## 6. Reporting and analytics
 
-| # | Scenario | Why it matters | Examples of possible answers |
+| # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| U10 | **A new customer or account starts mid-month.** What should their first report or statement cover? | Partial months need a clear start date. | Costs from the day the account was linked. The whole month. Nothing until the next full month. |
-| U11 | **A customer or account leaves mid-month.** What should happen to their final report and to their stored data? | Leaving customers need a final statement, and their data may have to be deleted. | A final statement up to the leaving date. Data deleted after 90 days. Data kept for the retention period. |
-| U12 | **An account moves between customers, departments or AWS organizations.** Whose report should its costs appear in? | A move splits one account's costs between two owners. | Split by the date of the move. The new owner gets the whole month. |
-| U13 | **Past months are needed.** On the first run, or after a correction, earlier months must be processed. How far back? | Back-filling needs the old files to still exist, and can take a long time. | The last 12 months on the first run. Any month on request. Only months from now on. |
-| U14 | **Savings Plans and Reserved Instances.** Upfront or monthly commitment fees appear on one account but benefit many. How should they be shown? | The choice changes every recipient's totals. | Spread each fee over the accounts that used it. Show the fee where it was bought. Leave it out. |
-| U15 | **Credits and refunds.** AWS credits, promotional credits and refunds arrive. Who gets the benefit? | Credits can be large, and passing them on is a business decision. | Pass credits to the customer whose usage earned them. Keep credits for FPT. Show them on a separate line. |
-| U16 | **Shared costs.** Some costs serve everyone, such as the AWS Support plan, shared networks or tax. How should they be divided? | Every shared cost needs a sharing rule, or totals will not add up. | Divide in proportion to each recipient's spending. Charge them to a central budget. Show them separately. |
-| U17 | **Prices or margins change mid-month.** A reseller margin or a customer discount changes partway through a month. Which applies to which days? | Mixed rates in one month need a clear rule. | The new rate from the day it changes. The new rate from the next month. |
+| R1 | Which questions must the reports answer for each group of users? | Reports should answer real questions, not just show data. | What did each customer spend? Which services grew? Where is money wasted? |
+| R2 | Which measures of cost must reports show? | Each measure gives a different total. | Billed cost. Amortized cost. Cost after discounts. List price. |
+| R3 | Which key performance indicators must getBill track? | Indicators show whether cloud spending is under control. | Cost per customer. Share of costs tagged. Commitment coverage. Forecast accuracy. |
+| R4 | Which dashboards does each group need? | Each dashboard needs its own data and access rules. | An executive summary. A customer view. A view for each engineering team. |
+| R5 | How far back must users be able to compare costs? | Long comparisons need a long history. | The last month. The last 13 months. Three years. |
+| R6 | Must users be able to go from totals down to individual resources? | Going down to resources needs detailed data and fast queries. | Yes, to each resource. Only to each service. No. |
+| R7 | Must analysts be able to write their own queries on the data? | Self-service queries reduce requests to the engineering team. | Yes, with SQL. Yes, with a report builder. No. |
+| R8 | Must users be able to export report data? | Exports let users work in their own tools. | To Excel. To CSV. To PDF. No exports. |
+| R9 | Must some reports be sent automatically on a schedule? | Scheduled reports reach people who never sign in. | Weekly by email. Monthly with the bill. No. |
+| R10 | Which reporting tool should users see? | The tool decides licensing costs and how reports are built. | Amazon Quick Sight. Microsoft Power BI. A getBill web portal. No preference. |
+| R11 | How quickly must a dashboard open? | Slow dashboards drive users away. | In under five seconds. In under thirty seconds. |
+| R12 | Must reports show exactly the same numbers as each provider's own cost tools? | Differences from the provider's tools cause doubt. | Yes, exactly. Small differences are acceptable if they are explained. |
 
-### When things go wrong
+## 7. Delivery and notifications
 
-| # | Scenario | Why it matters | Examples of possible answers |
+| # | Question | Why it matters | Examples of possible answers |
 | --- | --- | --- | --- |
-| U18 | **The billing file is late or missing at the deadline.** What should happen, and who should be told? | Recipients wait on the results, and someone must chase the source. | Alert the data owner and wait. Send last month's figures marked as late. Tell the recipients about the delay. |
-| U19 | **A file is incomplete, damaged or duplicated.** What should getBill do? | Processing bad data produces wrong results. | Stop and alert. Skip the bad file and continue. Remove duplicate lines automatically. |
-| U20 | **AWS changes a month after it was delivered.** See S11. Should the recipients get a corrected version, and how are they told? | A corrected statement can change money already invoiced. | Send a corrected version with the changes marked. Adjust next month's statement instead. |
-| U21 | **Wrong results were already sent.** How are they withdrawn and replaced? | A wrong statement can reach a customer or an auditor. | Recall the link and send a corrected version with an explanation. Send a correction notice only. |
-| U22 | **A recipient's contact or access changes.** For example, someone leaves the company. How is the list of recipients kept up to date? | Results sent to a former employee or a wrong address are a data leak. | The account manager updates the list. The list comes from the company's directory. |
-| U23 | **AWS changes the export's columns or format.** See Q4. Who decides how getBill adapts? | AWS adds and renames columns from time to time. | The cloud team updates getBill within a week. Reports pause until it is fixed. |
-| U24 | **Data is lost or a service is down.** For example, the source bucket is deleted, or an AWS Region is unavailable on the deadline. How quickly must getBill recover? | Recovery needs copies of the data and a plan made in advance. | Recover within one business day from a copy in another Region. Wait for AWS to recover. |
+| D1 | How should each group receive its bills and reports? | Many recipients cannot use cloud storage directly. | A web portal. An email attachment. A file in the customer's own storage. SFTP. |
+| D2 | Which file formats must be delivered? | Each format needs its own builder. | PDF. Excel. CSV. Parquet. |
+| D3 | Who must receive a copy of each bill besides the customer? | Finance and account managers may need copies. | FPT finance. The account manager. Nobody. |
+| D4 | Should recipients be told when a bill or report is ready? | Without a notice, people use old results. | An email. A Microsoft Teams message. No notice. |
+| D5 | May results be delivered into a customer's own cloud account? | Delivery outside FPT needs the customer's permission and a trust relationship. | Yes, into the customer's storage. No, only through the portal or by email. |
+| D6 | Who must approve sending billing data outside FPT? | Sending data to the wrong place is a serious incident. | The data owner. Security. Legal. |
+| D7 | What is the largest file a recipient can receive? | Email systems often refuse attachments over about 25 MB. | 10 MB. 25 MB. No limit, because a download link is sent. |
+| D8 | How are lists of recipients kept up to date when people change jobs? | Bills sent to former staff leak data. | The customer updates them in the portal. The account manager updates them. |
+
+## 8. Anomalies
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| N1 | What counts as unusual spending? | Without a clear definition, alerts are either missed or too frequent. | A daily rise of more than 30%. A new service appearing. Spending over a fixed amount. |
+| N2 | Should getBill find unusual spending with fixed limits or with statistical models? | Statistical models learn normal patterns, but their alerts are harder to explain. | Fixed limits. Statistical models. Both. |
+| N3 | Who must be told about unusual spending? | An alert must reach someone who can act. | The account owner. The FinOps team. The customer. |
+| N4 | How quickly must someone be told after unusual spending starts? | Every hour of a runaway cost adds to the bill. | Within hours. By the next day. Weekly. |
+| N5 | Through which channel must these alerts arrive? | People ignore alerts in channels they do not watch. | Email. Microsoft Teams. Slack. A ticket in ServiceNow or Jira. |
+| N6 | Must people record the cause of unusual spending and what they did about it? | A record shows patterns and proves that action was taken. | Yes, in getBill. Yes, in the ticket system. No. |
+| N7 | How many false alarms are acceptable? | Too many false alarms make people ignore every alert. | A few each month. None. |
+
+## 9. Budgets and forecasts
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| F1 | At which levels must budgets be set? | Each level needs its own owner and alerts. | For each customer. For each business unit. For each project. For each account. |
+| F2 | Who sets each budget? | Budgets without owners are ignored. | Finance. Each team lead. Each customer. |
+| F3 | Should budgets cover a month, a quarter or a year? | The period decides how alerts are calculated. | Monthly. Quarterly. Yearly, with monthly targets. |
+| F4 | When should a budget alert be sent? | Early alerts leave time to act. | At 80% of the budget. At 100%. When the forecast passes the budget. |
+| F5 | Who must receive budget alerts? | Alerts must reach someone who can act. | The budget owner. Finance. The customer. |
+| F6 | How far ahead must getBill forecast costs? | Longer forecasts are less accurate. | To the end of the month. To the end of the quarter. Twelve months. |
+| F7 | How accurate must forecasts be? | An accuracy target shows whether forecasts can be trusted. | Within 5%. Within 10%. No target. |
+| F8 | Should forecasts include planned changes, such as new projects or migrations? | Forecasts based only on history miss planned growth. | Yes, entered by each team. No, history only. |
+| F9 | Must getBill compare each forecast with the actual spending afterwards? | The comparison improves later forecasts. | Yes, every month. No. |
+| F10 | Must budgets be read from, or sent to, a financial planning system? | Budgets entered in two places drift apart. | Read from Anaplan. Read from Excel. No other system. |
+
+## 10. Unit economics and business value
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| E1 | Which business measures should cloud cost be compared with? | Cost per unit shows whether spending grows faster than the business. | Cost per customer. Cost per transaction. Cost per active user. |
+| E2 | Where do those business measures come from? | getBill must read them from somewhere. | A product database. A finance system. Entered by hand. |
+| E3 | Who uses cost per unit, and for which decisions? | The use decides how detailed the figures must be. | Executives, for pricing. Engineers, for design choices. |
+| E4 | Must getBill compare costs with targets or industry benchmarks? | Targets show whether a figure is good or bad. | Internal targets. Industry benchmarks. No. |
+| E5 | Must getBill show FPT's margin on each customer's cloud resale? | The margin shows which customers are profitable. | Yes, for FPT staff only. No. |
+
+## 11. Commitments and rates
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| K1 | Which commitment discounts are used today? | getBill must track each kind. | AWS Savings Plans. Reserved Instances. Azure reservations. Google Cloud committed use discounts. |
+| K2 | Who decides when to buy commitments? | Buying a commitment is a financial decision that lasts one to three years. | The FinOps team. Finance. Each customer. |
+| K3 | Must getBill recommend which commitments to buy? | Recommendations need usage history and price data. | Yes. No, the providers' own recommendations are enough. |
+| K4 | Must getBill track how much of each commitment is used? | An unused commitment is money spent for nothing. | Yes, daily. Yes, monthly. No. |
+| K5 | Which targets apply to commitment coverage and use? | Targets show whether commitments are well managed. | 80% coverage and 95% use. No targets. |
+| K6 | Does FPT have negotiated spending agreements with any provider? | getBill must track progress against these agreements. | An AWS private pricing agreement. A Microsoft Azure Consumption Commitment. None. |
+| K7 | Must getBill track spending against these agreements? | Falling short of an agreed amount costs money. | Yes. No. |
+| K8 | Who receives the savings from commitments bought for customers? | The savings change each customer's price and FPT's margin. | The customer. FPT. Shared between them. |
+| K9 | Must getBill show savings from spot capacity and other discounted capacity? | These savings show the value of engineering choices. | Yes. No. |
+| K10 | Should commitment discounts be shared across different customers in the same AWS organization? | AWS shares Savings Plans and Reserved Instances across all accounts in an organization unless sharing is turned off. | Yes, FPT shares them and keeps the savings. No, each customer's discounts stay with that customer. |
+
+## 12. Workload optimization
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| O1 | Must getBill find idle or unused resources? | Idle resources are the easiest savings. | Yes. No. |
+| O2 | Must getBill recommend smaller or cheaper resource sizes? | Choosing the right size is a large source of savings. | Yes. No, the providers' own tools are enough. |
+| O3 | Which kinds of resources must be checked for savings? | Each kind needs its own checks. | Servers. Databases. Storage. Kubernetes. |
+| O4 | Who acts on savings recommendations? | Recommendations without an owner are ignored. | Each engineering team. The FinOps team. The customer. |
+| O5 | May getBill change resources automatically, such as stopping idle servers? | Automatic changes save money but can cause outages. | No, recommendations only. Yes, in test environments only. Yes, with approval. |
+| O6 | Must getBill track the savings that were actually achieved? | Tracking proves the value of the FinOps work. | Yes, for each team. Yes, for each customer. No. |
+| O7 | How should savings recommendations reach the people who act on them? | People act on work that appears in their own tools. | A dashboard. A ticket in Jira or ServiceNow. A weekly email. |
+| O8 | Must getBill estimate the cost of a planned workload before it is built? | Estimates help teams choose cheaper designs. | Yes. No. |
+
+## 13. Licenses and SaaS
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| L1 | Which software licenses run on cloud resources? | License costs can be larger than the server cost. | Windows Server. SQL Server. Oracle. Red Hat. |
+| L2 | Are any licenses brought from your own agreements instead of bought through the cloud? | Your own licenses must be tracked against your contracts. | Yes, Microsoft licenses. No. |
+| L3 | Must getBill track SaaS subscriptions and how many seats are used? | Unused SaaS seats are a common waste. | Yes. No. |
+| L4 | Where do SaaS costs come from? | Each source needs its own reader. | Vendor invoices. A SaaS management tool. Corporate card statements. |
+
+## 14. Sustainability
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| Y1 | Must getBill report the carbon emissions of cloud usage? | Emissions reports need the providers' carbon data. | Yes, for customers. Yes, for FPT only. No. |
+| Y2 | Which providers' carbon data must be included? | Each provider publishes carbon data in its own way. | AWS. Azure. Google Cloud. |
+| Y3 | Who uses the emissions reports, and for what? | The use decides the detail and the timing. | Annual sustainability reports. Customer requests. |
+
+## 15. Policy and governance
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| P1 | Which cloud cost policies exist today? | getBill may need to check them. | Required tags. Approved Regions. Approved server types. Spending limits. |
+| P2 | Must getBill report how well each policy is followed? | The report shows where the policies fail. | Yes. No. |
+| P3 | Must new spending above a set amount be approved before it starts? | Approval stops surprises but slows teams down. | Yes, above a monthly amount. No. |
+| P4 | How often should cost reviews take place, and who attends them? | Regular reviews keep costs in view. | Monthly with each team. Quarterly with executives. |
+| P5 | Which FinOps maturity level does FPT aim to reach? | The target sets how much process getBill must support. | Crawl. Walk. Run. |
+| P6 | Must any spending limits stop or slow usage automatically? | Hard limits protect budgets but can break services. | Yes, for test accounts. No. |
+
+## 16. Customer onboarding
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| U1 | How are new customers added today? | getBill should make this faster. | By email and spreadsheets. Through a request form. |
+| U2 | How long may it take to add a new customer? | It sets how much must be automated. | Less than a day. Less than a week. |
+| U3 | Which details must be collected for each new customer? | Missing details delay the first bill. | Billing contacts. Accounts. Pricing rules. Currency. |
+| U4 | Must customers be able to add their own billing sources? | Self-service saves FPT staff time. | Yes. No, FPT staff add them. |
+| U5 | What should a customer's first bill cover when it starts partway through a month? | A partial month needs a clear rule. | Only the days from the start date. The whole month. |
+| U6 | What happens to a customer's data when it leaves? | A leaving customer may need its data returned or deleted. | Returned, then deleted. Kept for the retention period. |
+| U7 | What happens when an account moves from one customer or team to another? | A move splits one account's costs between two owners. | Costs follow the account from the day of the move. The whole month goes to the new owner. |
+| U8 | How many customers will getBill serve now, and in two years? | The number of customers decides the design and the cost. | Ten. One hundred. One thousand. |
+| U9 | When a customer starts buying AWS through FPT, do its existing AWS accounts move into FPT's AWS organization? | Moving accounts changes who receives AWS's bill and needs a clear switch-over date. | Yes, the existing accounts move. New accounts are created. Both. |
+| U10 | When a customer stops buying AWS through FPT, how are its accounts handed back? | Removing accounts from FPT's organization ends FPT's billing and must match the final bill. | Accounts leave on the last day of the month. Accounts leave immediately. |
+
+## 17. Security and compliance
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| C1 | How sensitive is billing data, and how is it classified? | The classification decides the security controls. | Confidential. Internal. |
+| C2 | Which laws, contracts or policies apply to the data? | They limit where the data goes and who may see it. | Customer contracts. Vietnam's personal data protection decree. GDPR. |
+| C3 | Which security framework must getBill meet? | The framework sets the controls and the documents. | NIST SP 800-53 Moderate. ISO 27001. SOC 2. None. |
+| C4 | Are any customers government organizations? | Government customers bring their own security rules. | No. U.S. federal agencies. State or local governments. |
+| C5 | Is any billing data Controlled Unclassified Information (CUI)? | CUI must be protected under NIST SP 800-171. | No. Yes. Not known. |
+| C6 | Will getBill or any customer need a government cloud? | Government clouds have their own accounts, sign-in and rules. | No. AWS GovCloud (US). Azure Government. |
+| C7 | Must the encryption use cryptographic modules validated under FIPS 140? | Many government contracts require it. | Yes. No. |
+| C8 | Who must control the encryption keys? | Keys that a customer controls need extra permissions for every reader. | The cloud provider. FPT. Each customer. |
+| C9 | In which countries or Regions must billing data stay? | Data residency rules limit where data can be stored. | The United States. Vietnam. Anywhere. |
+| C10 | May billing data from Azure and Google Cloud be copied into AWS? | Some rules forbid moving data from one provider to another. | Yes. No. |
+| C11 | Must each customer's data be stored apart from other customers' data? | Separate storage adds cost and setup work. | Shared storage with strict access rules. A separate account for some customers. A separate account for every customer. |
+| C12 | Are there limits on who may see the data, or on where they work? | Some contracts allow only certain people or countries. | Only U.S. persons. Only FPT staff. |
+| C13 | May billing data be copied to a person's computer? | Copies on laptops can leak. | Yes. Only to company-managed computers. No. |
+| C14 | Which security documents must come with getBill for customers or auditors? | Buyers often ask for proof of secure development. | A system security plan. Penetration test results. A software bill of materials. |
+| C15 | Must reports and the portal meet accessibility rules? | Section 508 applies to software used by U.S. federal agencies. | Yes, Section 508. Yes, WCAG 2.1 level AA. No. |
+
+## 18. Data quality and month close
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| Q1 | Must getBill's totals match each provider's invoice? | Finance checks the bills against the invoice. | Yes, to the cent. Within a stated tolerance. No. |
+| Q2 | When is a month final? | Reporting before a provider closes a month gives numbers that change later. | When the provider issues the invoice. A set number of days after the month ends. |
+| Q3 | What should happen when a provider changes a month after it was billed? | Providers restate months after credits or refunds. | Issue a corrected bill. Adjust the next month's bill. Ignore small changes. |
+| Q4 | What should happen when billing data is late or missing on the deadline? | Customers are waiting for the bill. | Wait and alert. Issue an estimated bill. Bill without that source. |
+| Q5 | Which checks must pass before a bill is released? | Checks catch errors before customers see them. | Totals match the invoice. No unassigned costs. Large changes reviewed. |
+| Q6 | Who must be told when a check fails, and how quickly? | A failure that nobody sees means a late or wrong bill. | The operations team within an hour. The product owner the next day. |
+| Q7 | When a month is processed again, should the earlier results be replaced or kept as a version? | Earlier versions show what recipients saw on each date. | Keep every version. Replace them. |
+
+## 19. Retention and archiving
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| A1 | How long must raw billing data be kept? | Tax, audit and contract rules set minimum periods. | 13 months. Seven years. Ten years. |
+| A2 | How long must issued bills be kept? | Bills are financial records. | Seven years. Ten years. |
+| A3 | How long must audit records of who did what be kept? | Investigations need old records. | One year. Seven years. |
+| A4 | Must issued bills be impossible to change or delete? | Auditors need proof that records were not altered. | Yes. No. |
+| A5 | How quickly must records be produced for an auditor? | Some audits have short deadlines. | Within a day. Within a week. |
+| A6 | Who approves deleting data after its retention period ends? | A deletion must not break a legal hold. | It happens automatically. Finance approves. Legal approves. |
+
+## 20. Integrations
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| X1 | Which accounting system must receive billing data? | Each system needs its own format or connection. | SAP. Oracle NetSuite. QuickBooks. None. |
+| X2 | Which ticket system should getBill send work to? | Teams act on tickets in their own tools. | Jira. ServiceNow. None. |
+| X3 | Which chat tools should getBill send messages to? | Alerts in chat get faster responses. | Microsoft Teams. Slack. None. |
+| X4 | Must getBill read resource owners from a configuration management database? | A configuration management database can tell getBill who owns each resource. | ServiceNow. None. |
+| X5 | Must other systems be able to read getBill's data through an API? | An API lets other tools reuse the data. | Yes. No. |
+| X6 | Must getBill send its data to a company data warehouse? | A data warehouse lets other teams combine cost data with other data. | Snowflake. Amazon Redshift. None. |
+
+## 21. Operations and service levels
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| V1 | Who owns and supports getBill day to day? | Someone must fix it when it fails. | The cloud team. A dedicated FinOps engineering team. |
+| V2 | During which hours must support be available? | Support hours decide the staffing. | Business hours in Vietnam. Around the clock. |
+| V3 | How much downtime is acceptable for the portal and dashboards? | The availability target decides the design and its cost. | 99.9% available. 99% available. Best effort. |
+| V4 | How quickly must getBill recover after a failure on a billing day? | The recovery time decides backups and failover. | Within four hours. Within one day. |
+| V5 | How much data may be lost after a failure? | It decides how often data is backed up. | None. One day. One week. |
+| V6 | How large is a month's billing data today, and how fast is it growing? | Size decides storage and processing costs. | A few gigabytes. Hundreds of gigabytes. Doubling each year. |
+| V7 | How must changes to getBill be tested and approved before release? | Untested changes can corrupt bills. | Automatic tests and a review. A test environment first. |
+| V8 | Which separate environments are needed? | Separate environments keep test changes away from real bills. | Development, test and production. Production only. |
+
+## 22. Moving from today's process
+
+| # | Question | Why it matters | Examples of possible answers |
+| --- | --- | --- | --- |
+| M1 | Which manual steps are used today to produce bills and reports? | Each step must be rebuilt in getBill. | Exporting data. Copying it into Excel. Running macros. Emailing files. |
+| M2 | Which Excel workbooks and VBA macros are used today? | Each one must be listed before it can be replaced. | One workbook for each customer. A shared pricing workbook. |
+| M3 | Who maintains each workbook and macro? | The people who maintain them know the hidden rules. | A finance analyst. The cloud team. |
+| M4 | How long should getBill and the old process run side by side? | Running both shows whether getBill's results match. | One month. Two months. Until finance approves. |
+| M5 | What must match before the old process stops? | A clear test prevents surprises for customers. | Every customer's total, to the cent. Totals within 1%. |
+| M6 | Which customers still need Excel files, and until when? | It decides how long Excel output must be kept. | None. Some, until their contracts renew. |
+| M7 | Which past bills must be loaded into getBill? | Customers may ask about old bills. | None. The last 12 months. |
 
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 13:34 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
 <!-- /document-footer -->

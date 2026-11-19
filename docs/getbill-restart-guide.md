@@ -1,6 +1,6 @@
 # getBill restart guide
 
-_Last modified: 2026-11-17 18:07 EST_
+_Last modified: 2026-11-19 08:28 EST_
 
 This guide is for anyone who picks up getBill after a break. It says where the project stands, how
 to set up a computer to work on it, which routine steps each kind of change needs, and which
@@ -9,7 +9,7 @@ project got here and why the main decisions were made.
 
 ## Where the project stands
 
-These facts were true on 2026-11-17, at version 0.1.0-alpha.17.
+These facts were true on 2026-11-19, at version 0.1.0-alpha.18.
 
 - getBill works as an interactive command-line tool. It converts CSV and Parquet files, including
   AWS CUR 2.0 billing exports, from an S3 folder into Excel workbooks, and uploads the workbooks to
@@ -18,10 +18,13 @@ These facts were true on 2026-11-17, at version 0.1.0-alpha.17.
   against real AWS accounts or real billing exports.
 - The tests run on GitHub Actions on Python 3.9 and 3.12, and the code coverage must reach 80%.
   The test runs for versions 0.1.0-alpha.15 and 0.1.0-alpha.16 failed, because Git inside the test
-  container refused to read a folder that belongs to another user. Version 0.1.0-alpha.17 fixes
-  the test. Check that the latest run on the repository's **Actions** tab passed.
-- The product owner has not answered the requirements questionnaire yet. No compliance or security
-  framework has been chosen.
+  container refused to read a folder that belongs to another user. Version 0.1.0-alpha.17 fixed
+  the test, and its run passed on both Python versions.
+- The product owner has not answered the requirements questionnaire yet.
+- On 2026-11-19 the project owner recorded the first product decisions in the
+  [product document](getbill-product.md). getBill is a billing product first, release 1 covers AWS
+  and Azure, and the security target is the NIST SP 800-53 Revision 5 Moderate baseline. Read the
+  product document before any design work.
 - The repository lives at `github.com/scriptbuzz/getbill`, and all work happens on the `main`
   branch. GitHub Pages publishes the `docs/` folder at `https://scriptbuzz.github.io/getbill/`.
 
@@ -134,13 +137,12 @@ Then add a row for the new version to the release table in the
 
 ## Open questions and unfinished work
 
-1. **The compliance framework is undecided.** Most customers are expected to be U.S. federal
-   agencies. Questions C7 to C15 in the questionnaire ask the product owner about government
-   customers, Controlled Unclassified Information, the framework to follow, AWS GovCloud (US),
-   FIPS 140 encryption, security documents, Section 508 accessibility, and limits on who may see the
-   data. Until they are answered, NIST SP 800-53 Revision 5 at the Moderate baseline is a
-   reasonable engineering target, because FedRAMP Moderate is built on it. This is a suggestion,
-   not a decision.
+1. **The compliance target may still rise.** The project owner chose the NIST SP 800-53
+   Revision 5 Moderate baseline as the design target on 2026-11-19, without seeking a formal
+   authorization yet. Questions C7 to C15 in the questionnaire ask the product owner about
+   government customers, Controlled Unclassified Information, AWS GovCloud (US), FIPS 140
+   encryption, security documents, Section 508 accessibility, and limits on who may see the data.
+   Their answers may require a stricter target.
 2. **The questionnaire has no answers yet.** If a private workbook was created before version
    0.1.0-alpha.14, it lacks questions C7 to C15, and someone must copy them into it by hand.
 3. **getBill has never run against real AWS.** The engineering note lists 21 known limitations.
@@ -160,6 +162,7 @@ Then add a row for the new version to the release table in the
 | Document | What it holds |
 | --- | --- |
 | [README.md](../README.md) | How to install, run and test getBill, which AWS permissions it needs, and how the version, secret check and stamps work. |
+| [getbill-product.md](getbill-product.md) | What getBill is for, who uses it, what each release must do, the decisions made so far, and how getBill is built. |
 | [getbill-project-history.md](getbill-project-history.md) | Every version, and the reasons behind the main design decisions. |
 | [getbill-pipeline-questions.md](getbill-pipeline-questions.md) | The requirements questionnaire for the product owner, with questions only. |
 | [getbill-pipeline-questions.xlsx](getbill-pipeline-questions.xlsx) | The blank workbook template, which people download to start answering. |
@@ -172,5 +175,5 @@ Then add a row for the new version to the release table in the
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 18:07 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 08:28 EST. Modified by: mbitar._
 <!-- /document-footer -->

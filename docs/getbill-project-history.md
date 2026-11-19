@@ -1,6 +1,6 @@
 # getBill project history
 
-_Last modified: 2026-11-17 18:07 EST_
+_Last modified: 2026-11-19 08:28 EST_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -32,6 +32,7 @@ planned releases.
 | 0.1.0-alpha.15 | 2026-11-17 | The blank requirements workbook is kept in the repository as a template, and a check refuses it once it holds any answer. |
 | 0.1.0-alpha.16 | 2026-11-17 | Every document carries the internal-use notice, the last-modified date and time, and "Modified by: mbitar", including LICENSE and every row of the Microsoft Lists file. A test checks every document. |
 | 0.1.0-alpha.17 | 2026-11-17 | The test that checks which workbooks Git ignores works inside the test container again, and the restart guide was added. |
+| 0.1.0-alpha.18 | 2026-11-19 | The product document was added. It records the first product decisions, the release 1 scope, and how getBill is built. |
 
 ## Decisions and the reasons for them
 
@@ -114,6 +115,15 @@ planned releases.
   customers, Controlled Unclassified Information, frameworks such as FedRAMP and NIST SP 800-53,
   AWS GovCloud (US), FIPS 140 encryption, security documents, Section 508 accessibility, and limits
   on who may see the data. The engineering note lists the matching gaps as limitations 16 to 21.
+- On 2026-11-19 the project owner made the first product decisions, which the
+  [product document](getbill-product.md) records with their consequences for the design:
+  - getBill is a billing product first, and FinOps features follow later.
+  - getBill replaces the Excel and VBA processing in use today, and Excel stays as a transitional
+    output.
+  - Release 1 covers AWS and Azure. Billing data from every provider is stored in the FOCUS 1.2
+    format, an open standard that AWS, Azure and Google Cloud all export.
+  - The security target is the NIST SP 800-53 Revision 5 Moderate baseline, without a formal
+    authorization for now.
 
 ### Documents
 
@@ -127,5 +137,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-17 18:07 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 08:28 EST. Modified by: mbitar._
 <!-- /document-footer -->

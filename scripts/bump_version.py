@@ -83,6 +83,14 @@ def next_version(version: str, part: str) -> str:
     return f"{major + 1}.0.0a1"
 
 
+def stamp_unpushed_documents() -> None:
+    """Stamp every document that the next push will change, so each one shows the new version."""
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import stamp_docs
+
+    stamp_docs.main(["--unpushed"])
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Raise getBill's version and update every place it is shown.")
     parser.add_argument("part", nargs="?", default="pre", choices=["pre", "patch", "minor", "major", "release"],
@@ -113,11 +121,7 @@ def main(argv=None) -> int:
         path.write_text(updated, encoding="utf-8")
         print(f"Updated {path.relative_to(ROOT)}")
     print(f"Version {old} (v{display(old)}) is now {new} (v{display(new)}).")
-    # Stamp every document that the next push will change, so each one shows the new version.
-    sys.path.insert(0, str(ROOT / "scripts"))
-    import stamp_docs
-
-    stamp_docs.main(["--unpushed"])
+    stamp_unpushed_documents()
     return 0
 
 

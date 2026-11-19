@@ -64,6 +64,10 @@ def version_files(bump, tmp_path, monkeypatch):
     monkeypatch.setattr(bump, "ROOT", tmp_path)
     monkeypatch.setattr(bump, "VERSION_FILE", files["init"])
     monkeypatch.setattr(bump, "SHOWN_IN", list(files.values()))
+    # Record the call that stamps the documents instead of stamping the real project.
+    stamp_calls = []
+    monkeypatch.setattr(bump, "stamp_unpushed_documents", lambda: stamp_calls.append("stamped"))
+    files["stamp_calls"] = stamp_calls
     return files
 
 
@@ -76,6 +80,7 @@ def test_bump_updates_every_place_the_version_is_shown(bump, version_files):
     assert "`0.1.0a3`" in readme
     assert "alpha.2" not in readme and "0.1.0a2" not in readme
     assert "v0.1.0-alpha.3" in version_files["page"].read_text()
+    assert version_files["stamp_calls"] == ["stamped"]
 
 
 def test_bump_changes_no_file_when_one_does_not_show_the_version(bump, version_files):
@@ -84,6 +89,7 @@ def test_bump_changes_no_file_when_one_does_not_show_the_version(bump, version_f
         bump.main([])
     assert version_files["init"].read_text() == '__version__ = "0.1.0a2"\n'
     assert "alpha.2" in version_files["readme"].read_text()
+    assert version_files["stamp_calls"] == []
 
 
 # ---------------------------------------------------------------- scripts/stamp_docs.py

@@ -1,8 +1,8 @@
 # getBill alpha: what the prototype does today
 
-_Last modified: 2026-11-19 10:44 EST_
+_Last modified: 2026-11-19 14:27 EST_
 
-_Version: 0.1.0-alpha.22_
+_Version: 0.1.0-alpha.23_
 
 This note is for the engineering team. It records what the getBill alpha prototype can and cannot
 do, so that its gaps can be compared with the product owner's answers in the
@@ -56,5 +56,5 @@ dropped because nobody needs it.
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.23. Last modified: 2026-11-19 14:27 EST. Modified by: mbitar._
 <!-- /document-footer -->

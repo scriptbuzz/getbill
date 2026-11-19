@@ -1,6 +1,6 @@
 # getBill v0.1.0-alpha.21
 
-_Last modified: 2026-11-19 10:02 EST_
+_Last modified: 2026-11-19 10:19 EST_
 
 <p align="center">
   <img src=".github/banner.svg" alt="getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks: CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3." width="900">
@@ -371,6 +371,7 @@ that the commit contains no secret.
 | [Requirements questionnaire](docs/getbill-pipeline-questions.md) | The questions for the product owner. The answers are kept privately, not in this repository. |
 | [Engineering note](docs/getbill-alpha-gap-analysis.md) | What the alpha does today and its known limitations. |
 | [Flow diagram](docs/getbill-flow-diagram.svg) | How getBill moves files from S3, through the computer, and back to S3. |
+| [AWS architecture diagram](docs/getbill-aws-architecture.svg) | How the planned getBill platform in AWS collects the daily billing exports from customer accounts in AWS, Microsoft Azure and Google Cloud, converts them to FOCUS 1.2, and shows them in dashboards. It uses the official AWS, Azure and Google Cloud icons. |
 
 ## License
 
@@ -403,5 +404,5 @@ Without `--changed`, the script stamps every document. You can also name the fil
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 10:02 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 10:19 EST. Modified by: mbitar._
 <!-- /document-footer -->

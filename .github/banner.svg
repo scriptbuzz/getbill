@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 330" width="1200" height="330" role="img" aria-labelledby="t d">
-  <title id="t">getBill v0.1.0-alpha.24</title>
+  <title id="t">getBill v0.1.0-alpha.25</title>
   <desc id="d">getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks. CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3.</desc>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
@@ -16,7 +16,7 @@
 
   <text id="title" x="50" y="128" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="72" font-weight="700" fill="#F2F4F7">getBill</text>
   <rect id="pill" x="300" y="82" width="200" height="40" rx="20" fill="none" stroke="#FF9900" stroke-width="2"/>
-  <text id="pill-text" x="400" y="109" text-anchor="middle" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="18" font-weight="700" fill="#FF9900">v0.1.0-alpha.24</text>
+  <text id="pill-text" x="400" y="109" text-anchor="middle" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="18" font-weight="700" fill="#FF9900">v0.1.0-alpha.25</text>
 
   <text id="tagline" x="50" y="176" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="25" fill="#B8C3D0">Turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks.</text>
 

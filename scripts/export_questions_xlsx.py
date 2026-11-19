@@ -35,6 +35,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from bump_version import display, read_version  # noqa: E402
 from export_questions import SOURCE, QuestionnaireError, parse_questions  # noqa: E402
 
 TARGET = SOURCE.with_suffix(".xlsx")
@@ -93,7 +94,9 @@ GRID = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 
 
 def footer_text(stamp: str) -> str:
-    return f"Internal use only. Last modified: {stamp}. Modified by: {MODIFIED_BY}."
+    """The footer of every worksheet, with the getBill version in the form people see."""
+    return (f"Internal use only. Version: {display(read_version())}. Last modified: {stamp}. "
+            f"Modified by: {MODIFIED_BY}.")
 
 
 def set_print_layout(sheet, stamp: str, title_rows: str | None = None) -> None:

@@ -1,6 +1,8 @@
 # getBill requirements questionnaire
 
-_Last modified: 2026-11-19 09:39 EST_
+_Last modified: 2026-11-19 10:44 EST_
+
+_Version: 0.1.0-alpha.22_
 
 This questionnaire collects what getBill must do, from where the billing files come from to how
 long they are kept. It is written for the product owner and the people who own the data and the
@@ -449,5 +451,5 @@ page must be re-created from the new blank workbook.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
 <!-- /document-footer -->

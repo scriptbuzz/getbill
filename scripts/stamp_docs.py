@@ -1,14 +1,19 @@
 """Write the current date and time into the header stamp and footer of each document.
 
 Every document carries two stamps:
-  - A "Last modified" line directly under the title.
-  - A footer that says the document is for internal use only, gives the same date and time,
-    and names who modified it.
+  - A "Last modified" line directly under the title, followed by the getBill version.
+  - A footer that says the document is for internal use only, gives the same version, date and
+    time, and names who modified it.
+
+The version comes from src/getbill/__init__.py, in the form people see, such as 0.1.0-alpha.22.
+scripts/bump_version.py runs this script with --unpushed after it raises the version, so every
+document in the next push shows the version that the push carries.
 
 Supported documents are Markdown files, SVG diagrams, HTML pages, and the plain-text LICENSE file.
+In a Markdown file, the version is a separate line, _Version: 0.1.0-alpha.22_, under the stamp.
 In an SVG diagram or an HTML page, the script updates the elements with id="last-modified" and
-id="document-footer". In a plain-text file, it writes the stamp under the first line and the footer
-after a line of three dashes at the end.
+id="document-footer". In a plain-text file, it writes the stamp and the version under the first
+line and the footer after a line of three dashes at the end.
 
 The Microsoft Lists CSV file cannot hold a title or a footer, so scripts/export_questions.py copies
 the questionnaire's stamp into two columns of every row instead. Whenever this script stamps the
@@ -18,6 +23,7 @@ Run the script after you change a document, so the stamps cannot fall out of dat
     python3 scripts/stamp_docs.py                  # stamps every document in the project
     python3 scripts/stamp_docs.py README.md        # stamps only the files you name
     python3 scripts/stamp_docs.py --changed        # stamps documents that git reports as changed
+    python3 scripts/stamp_docs.py --unpushed       # stamps documents that differ from GitHub
 
 The script uses only the Python standard library.
 """
@@ -30,7 +36,7 @@ import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 MODIFIED_BY = "mbitar"
@@ -46,35 +52,52 @@ def now_text() -> str:
     return datetime.now().astimezone().strftime("%Y-%m-%d %H:%M %Z")
 
 
-def footer_sentence(stamp: str) -> str:
-    return f"Internal use only. Last modified: {stamp}. Modified by: {MODIFIED_BY}."
+def current_version() -> str:
+    """The getBill version in the form people see, for example 0.1.0-alpha.22."""
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import bump_version
+
+    return bump_version.display(bump_version.read_version())
 
 
-def stamp_markdown(text: str, stamp: str) -> str:
-    """Update the stamp under the title and replace or add the footer block at the end."""
+def footer_sentence(stamp: str, version: Optional[str] = None) -> str:
+    shown = f" Version: {version}." if version else ""
+    return f"Internal use only.{shown} Last modified: {stamp}. Modified by: {MODIFIED_BY}."
+
+
+def stamp_markdown(text: str, stamp: str, version: Optional[str] = None) -> str:
+    """Update the stamp and version under the title and replace or add the footer block at the end."""
     header = f"_Last modified: {stamp}_"
     if re.search(r"^_Last modified: [^\n]*_$", text, flags=re.MULTILINE):
         text = re.sub(r"^_Last modified: [^\n]*_$", header, text, count=1, flags=re.MULTILINE)
     else:
         # Put the stamp directly under the first heading.
         text = re.sub(r"^(# [^\n]*\n)", rf"\1\n{header}\n", text, count=1, flags=re.MULTILINE)
+    if version:
+        line = f"_Version: {version}_"
+        if re.search(r"^_Version: [^\n]*_$", text, flags=re.MULTILINE):
+            text = re.sub(r"^_Version: [^\n]*_$", lambda _: line, text, count=1, flags=re.MULTILINE)
+        else:
+            # A blank line keeps the version on its own line when the Markdown is shown.
+            text = re.sub(r"^(_Last modified: [^\n]*_\n)", lambda m: f"{m.group(1)}\n{line}\n", text,
+                          count=1, flags=re.MULTILINE)
 
-    footer = f"{FOOTER_START}\n---\n\n_{footer_sentence(stamp)}_\n{FOOTER_END}\n"
+    footer = f"{FOOTER_START}\n---\n\n_{footer_sentence(stamp, version)}_\n{FOOTER_END}\n"
     block = re.compile(re.escape(FOOTER_START) + r".*?" + re.escape(FOOTER_END) + r"\n?", flags=re.DOTALL)
     if block.search(text):
         return block.sub(lambda _: footer, text)
     return text.rstrip("\n") + "\n\n" + footer
 
 
-def stamp_tagged(text: str, stamp: str) -> str:
+def stamp_tagged(text: str, stamp: str, version: Optional[str] = None) -> str:
     """Update the elements with id="last-modified" and id="document-footer" in SVG or HTML.
 
     Each element must hold plain text only, such as <text id="last-modified">…</text> in a
     diagram or <footer id="document-footer">…</footer> in a page.
     """
     for element_id, content in (
-        ("last-modified", f"Last modified: {stamp}"),
-        ("document-footer", footer_sentence(stamp)),
+        ("last-modified", f"Last modified: {stamp}. Version: {version}." if version else f"Last modified: {stamp}"),
+        ("document-footer", footer_sentence(stamp, version)),
     ):
         pattern = re.compile(rf'(<(\w+)\b[^>]*\bid="{element_id}"[^>]*>)[^<]*(</\2>)')
         if not pattern.search(text):
@@ -83,16 +106,23 @@ def stamp_tagged(text: str, stamp: str) -> str:
     return text
 
 
-def stamp_plain(text: str, stamp: str) -> str:
-    """Update or add the stamp under the first line, and the footer at the end, of a text file."""
+def stamp_plain(text: str, stamp: str, version: Optional[str] = None) -> str:
+    """Update or add the stamp and version under the first line, and the footer at the end, of a text file."""
     header = f"Last modified: {stamp}"
     if re.search(r"^Last modified: [^\n]*$", text, flags=re.MULTILINE):
         text = re.sub(r"^Last modified: [^\n]*$", header, text, count=1, flags=re.MULTILINE)
     else:
         text = re.sub(r"^([^\n]*\n)", rf"\1\n{header}\n", text, count=1)
+    if version:
+        line = f"Version: {version}"
+        if re.search(r"^Version: [^\n]*$", text, flags=re.MULTILINE):
+            text = re.sub(r"^Version: [^\n]*$", lambda _: line, text, count=1, flags=re.MULTILINE)
+        else:
+            text = re.sub(r"^(Last modified: [^\n]*\n)", lambda m: f"{m.group(1)}{line}\n", text,
+                          count=1, flags=re.MULTILINE)
 
-    footer = f"---\n{footer_sentence(stamp)}\n"
-    existing = re.compile(r"\n---\nInternal use only\. Last modified: [^\n]*\n?\Z")
+    footer = f"---\n{footer_sentence(stamp, version)}\n"
+    existing = re.compile(r"\n---\nInternal use only\. [^\n]*Modified by: [^\n]*\n?\Z")
     if existing.search(text):
         return existing.sub(lambda _: "\n" + footer, text)
     return text.rstrip("\n") + "\n\n" + footer
@@ -114,33 +144,49 @@ def changed_documents() -> List[Path]:
     return [path for path in all_documents() if path in changed]
 
 
+def unpushed_documents() -> List[Path]:
+    """Documents that differ from the branch on GitHub, whether committed yet or not."""
+    result = subprocess.run(["git", "diff", "--name-only", "@{upstream}"],
+                            cwd=ROOT, capture_output=True, text=True)
+    if result.returncode != 0:
+        # Without a branch on GitHub to compare with, fall back to the uncommitted changes.
+        return changed_documents()
+    differing = {ROOT / line.strip() for line in result.stdout.splitlines() if line.strip()}
+    return sorted(set(changed_documents()) | {path for path in all_documents() if path in differing})
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description="Stamp the date, time, and footer into documents.")
     parser.add_argument("files", nargs="*", help="Documents to stamp. Without names, every document is stamped.")
     parser.add_argument("--changed", action="store_true", help="Stamp only documents that git reports as changed.")
+    parser.add_argument("--unpushed", action="store_true",
+                        help="Stamp only documents that differ from the branch on GitHub.")
     args = parser.parse_args(argv)
 
     if args.files:
         paths = [Path(name).resolve() for name in args.files]
+    elif args.unpushed:
+        paths = unpushed_documents()
     elif args.changed:
         paths = changed_documents()
     else:
         paths = all_documents()
 
     stamp = now_text()
+    version = current_version()
     for path in paths:
         original = path.read_text(encoding="utf-8")
         if path.suffix == ".md":
-            updated = stamp_markdown(original, stamp)
+            updated = stamp_markdown(original, stamp, version)
         elif path.suffix in (".svg", ".html"):
-            updated = stamp_tagged(original, stamp)
+            updated = stamp_tagged(original, stamp, version)
         elif path.name in PLAIN_TEXT_NAMES:
-            updated = stamp_plain(original, stamp)
+            updated = stamp_plain(original, stamp, version)
         else:
             print(f"Skipped {path.relative_to(ROOT)}, because only .md, .svg, .html and LICENSE files are supported.")
             continue
         path.write_text(updated, encoding="utf-8")
-        print(f"Stamped {path.relative_to(ROOT)} with {stamp}.")
+        print(f"Stamped {path.relative_to(ROOT)} with {stamp}, version {version}.")
         if path == QUESTIONNAIRE:
             sys.path.insert(0, str(ROOT / "scripts"))
             import export_questions  # The Lists file copies the questionnaire's stamp.

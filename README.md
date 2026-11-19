@@ -1,6 +1,8 @@
 # getBill v0.1.0-alpha.22
 
-_Last modified: 2026-11-19 10:25 EST_
+_Last modified: 2026-11-19 10:44 EST_
+
+_Version: 0.1.0-alpha.22_
 
 <p align="center">
   <img src=".github/banner.svg" alt="getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks: CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3." width="900">
@@ -393,7 +395,8 @@ Two files cannot hold a footer, so they carry the same information another way:
   **Questions last modified** and **Questions modified by** columns, on every row.
 
 After you change a document, run the stamp script so that both stamps show the time of the
-change. When it stamps the questionnaire, it also regenerates the Lists CSV file:
+change and the current getBill version. The version script runs the stamp script itself, so every
+document in a push shows the version that the push carries. When it stamps the questionnaire, it also regenerates the Lists CSV file:
 
 ```bash
 python3 scripts/stamp_docs.py --changed
@@ -404,5 +407,5 @@ Without `--changed`, the script stamps every document. You can also name the fil
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 10:25 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
 <!-- /document-footer -->

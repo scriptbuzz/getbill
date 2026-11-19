@@ -1,6 +1,8 @@
 # getBill product document
 
-_Last modified: 2026-11-19 09:39 EST_
+_Last modified: 2026-11-19 10:44 EST_
+
+_Version: 0.1.0-alpha.22_
 
 This document describes what getBill is, who it serves, what each release must do, and how it is
 built. It is the reference for product and design decisions from now on. When a decision changes,
@@ -295,5 +297,5 @@ workbooks. It is a prototype for parts of this design:
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
 <!-- /document-footer -->

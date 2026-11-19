@@ -1,9 +1,11 @@
 #!/bin/sh
-# Git pre-push hook that refuses a push unless getBill's version number was raised.
+# Git pre-push hook that refuses a push unless getBill's version number was raised and every
+# changed document shows the new version.
 #
 # Every push to GitHub must carry a new version. The hook compares the version in
 # src/getbill/__init__.py in the commit being pushed with the version in the commit that is
-# already on GitHub. When they match, the push is refused.
+# already on GitHub. When they match, the push is refused. The hook also refuses the push when
+# a document that the push changes does not show the new version in its stamp.
 #
 # To raise the version, run:   python3 scripts/bump_version.py
 # then commit the change and push again.
@@ -36,6 +38,22 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     status=1
   else
     echo "Version check passed: $old becomes $new."
+    # Every document that the push changes must show the new version in the form people see,
+    # such as 0.1.0-alpha.22.
+    shown=$(printf '%s' "$new" | sed -E 's/a([0-9]+)$/-alpha.\1/; s/b([0-9]+)$/-beta.\1/; s/rc([0-9]+)$/-rc.\1/')
+    stale=$(git diff --name-only --diff-filter=ACMR "$remote_sha" "$local_sha" |
+      grep -E '^[^/]*\.md$|^docs/.*\.(md|svg|html)$|^LICENSE$' |
+      while read -r path; do
+        git show "$local_sha:$path" | grep -qF "Version: $shown" || echo "  $path"
+      done)
+    if [ -n "$stale" ]; then
+      echo "Push refused: these documents do not show version $shown:"
+      echo "$stale"
+      echo "Run python3 scripts/stamp_docs.py --unpushed, commit, and push again."
+      status=1
+    else
+      echo "Document check passed: every changed document shows version $shown."
+    fi
   fi
 done
 exit $status

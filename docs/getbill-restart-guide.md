@@ -1,6 +1,8 @@
 # getBill restart guide
 
-_Last modified: 2026-11-19 10:25 EST_
+_Last modified: 2026-11-19 10:44 EST_
+
+_Version: 0.1.0-alpha.22_
 
 This guide is for anyone who picks up getBill after a break. It says where the project stands, how
 to set up a computer to work on it, which routine steps each kind of change needs, and which
@@ -81,9 +83,10 @@ getBill needs Python 3.9 or newer and Git. Run these commands once on each new c
 
 ### A change to a document
 
-Every document carries a "Last modified" stamp under its title and a footer that says
-"Internal use only", gives the same date and time, and names who modified it. After you change a
-document, run the stamp script, which updates both stamps in every changed document:
+Every document carries a "Last modified" stamp under its title, followed by the getBill version,
+and a footer that says "Internal use only", gives the same version, date and time, and names who
+modified it. After you change a document, run the stamp script, which updates both stamps in every
+changed document:
 
 ```bash
 python3 scripts/stamp_docs.py --changed
@@ -132,8 +135,10 @@ GitHub.
 python3 scripts/bump_version.py
 ```
 
-Then add a row for the new version to the release table in the
-[project history](getbill-project-history.md), and run the stamp script again.
+The script then stamps every document that differs from GitHub with the new version, so each
+document in the push shows the version that the push carries. The pre-push hook refuses a push
+that changes a document without the new version. Then add a row for the new version to the
+release table in the [project history](getbill-project-history.md), and run the stamp script again.
 
 ## Open questions and unfinished work
 
@@ -177,5 +182,5 @@ Then add a row for the new version to the release table in the
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 10:25 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
 <!-- /document-footer -->

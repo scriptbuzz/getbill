@@ -1,6 +1,8 @@
 # getBill project history
 
-_Last modified: 2026-11-19 10:25 EST_
+_Last modified: 2026-11-19 10:44 EST_
+
+_Version: 0.1.0-alpha.22_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -141,5 +143,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 10:25 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.22. Last modified: 2026-11-19 10:44 EST. Modified by: mbitar._
 <!-- /document-footer -->

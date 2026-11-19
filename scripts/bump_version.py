@@ -4,6 +4,9 @@ The version is set in one place, src/getbill/__init__.py, in Python's format, su
 People see it in a longer form, such as v0.1.0-alpha.2, in the README title and badge, on both
 demo web pages, and in the README banner. This script changes all of them together.
 
+After it raises the version, the script stamps every document that differs from GitHub with the
+date, the time and the new version (scripts/stamp_docs.py --unpushed).
+
 Raise the version before every push to GitHub. The pre-push check in .githooks refuses a push
 whose version matches the version already on GitHub.
 
@@ -110,6 +113,11 @@ def main(argv=None) -> int:
         path.write_text(updated, encoding="utf-8")
         print(f"Updated {path.relative_to(ROOT)}")
     print(f"Version {old} (v{display(old)}) is now {new} (v{display(new)}).")
+    # Stamp every document that the next push will change, so each one shows the new version.
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import stamp_docs
+
+    stamp_docs.main(["--unpushed"])
     return 0
 
 

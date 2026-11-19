@@ -111,6 +111,32 @@ def test_html_and_svg_stamps_are_replaced_in_place(stamp):
     assert '<footer id="document-footer">Internal use only. Last modified: 2026-01-01 09:00 EST. Modified by: mbitar.</footer>' in stamped
 
 
+def test_markdown_gets_one_version_line_under_the_stamp(stamp):
+    once = stamp.stamp_markdown("# Title\n\nBody text.\n", "2026-01-01 09:00 EST", "0.1.0-alpha.2")
+    assert once.startswith("# Title\n\n_Last modified: 2026-01-01 09:00 EST_\n\n_Version: 0.1.0-alpha.2_\n")
+    assert "Internal use only. Version: 0.1.0-alpha.2. Last modified: 2026-01-01 09:00 EST." in once
+    twice = stamp.stamp_markdown(once, "2026-01-02 10:00 EST", "0.1.0-alpha.3")
+    assert twice.count("_Version:") == 1
+    assert twice.count(stamp.FOOTER_START) == 1
+    assert "0.1.0-alpha.2" not in twice
+
+
+def test_html_and_svg_stamps_show_the_version(stamp):
+    page = '<p id="last-modified">old</p>\n<footer id="document-footer">old</footer>\n'
+    stamped = stamp.stamp_tagged(page, "2026-01-01 09:00 EST", "0.1.0-alpha.2")
+    assert '<p id="last-modified">Last modified: 2026-01-01 09:00 EST. Version: 0.1.0-alpha.2.</p>' in stamped
+    assert ("Internal use only. Version: 0.1.0-alpha.2. Last modified: 2026-01-01 09:00 EST. "
+            "Modified by: mbitar.</footer>") in stamped
+
+
+def test_plain_text_version_is_replaced_not_repeated(load_script):
+    stamp_plain = load_script("stamp_docs").stamp_plain
+    once = stamp_plain("TITLE\n\nBody text.\n", "2026-01-01 09:00 EST", "0.1.0-alpha.2")
+    assert once.startswith("TITLE\n\nLast modified: 2026-01-01 09:00 EST\nVersion: 0.1.0-alpha.2\n\nBody text.\n")
+    twice = stamp_plain(once, "2026-01-02 10:00 EST", "0.1.0-alpha.3")
+    assert twice == once.replace("2026-01-01 09:00", "2026-01-02 10:00").replace("alpha.2", "alpha.3")
+
+
 def test_a_page_without_stamp_elements_is_reported(stamp):
     with pytest.raises(ValueError, match="last-modified"):
         stamp.stamp_tagged("<p>No stamps here</p>", "2026-01-01 09:00 EST")
@@ -235,6 +261,7 @@ TEXT_DOCUMENTS = sorted({*ROOT.glob("*.md"), *DOCS.glob("*.md"), *DOCS.glob("*.s
 
 STAMP_TEXT = re.compile(r"Last modified: \d{4}-\d{2}-\d{2} \d{2}:\d{2} [A-Z]{2,5}")
 FOOTER_TEXT = re.compile(STAMP_TEXT.pattern + r"\. Modified by: mbitar\.")
+VERSION_TEXT = re.compile(r"Version: \d+\.\d+\.\d+(-(alpha|beta|rc)\.\d+)?")
 
 
 @pytest.mark.parametrize("path", TEXT_DOCUMENTS, ids=lambda path: path.name)
@@ -243,6 +270,7 @@ def test_every_text_document_has_the_notice_the_stamp_and_the_author(path):
     assert NOTICE in text
     assert len(STAMP_TEXT.findall(text)) >= 2  # One under the title and one in the footer.
     assert FOOTER_TEXT.search(text)
+    assert len(VERSION_TEXT.findall(text)) >= 2  # One with the stamp and one in the footer.
 
 
 def test_every_lists_row_carries_the_notice_and_the_questionnaire_stamp():
@@ -259,6 +287,7 @@ def test_every_worksheet_of_the_workbook_has_the_notice_the_stamp_and_the_author
     from openpyxl import load_workbook
     workbook = load_workbook(DOCS / "getbill-pipeline-questions.xlsx")
     assert all(FOOTER_TEXT.search(sheet.oddFooter.left.text or "") for sheet in workbook.worksheets)
+    assert all(VERSION_TEXT.search(sheet.oddFooter.left.text or "") for sheet in workbook.worksheets)
     about = [str(cell.value) for row in workbook["About"].iter_rows() for cell in row if cell.value]
     assert any(STAMP_TEXT.fullmatch(value) for value in about)
     assert any(FOOTER_TEXT.search(value) and NOTICE in value for value in about)

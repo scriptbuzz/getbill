@@ -1,8 +1,8 @@
 # getBill restart guide
 
-_Last modified: 2026-11-19 14:27 EST_
+_Last modified: 2026-11-19 14:29 EST_
 
-_Version: 0.1.0-alpha.23_
+_Version: 0.1.0-alpha.24_
 
 This guide is for anyone who picks up getBill after a break. It says where the project stands, how
 to set up a computer to work on it, which routine steps each kind of change needs, and which
@@ -11,7 +11,7 @@ project got here and why the main decisions were made.
 
 ## Where the project stands
 
-These facts were true on 2026-11-19, at version 0.1.0-alpha.23.
+These facts were true on 2026-11-19, at version 0.1.0-alpha.24.
 
 - getBill works as an interactive command-line tool. It converts CSV and Parquet files, including
   AWS CUR 2.0 billing exports, from an S3 folder into Excel workbooks, and uploads the workbooks to
@@ -182,5 +182,5 @@ release table in the [project history](getbill-project-history.md), and run the 
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.23. Last modified: 2026-11-19 14:27 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 14:29 EST. Modified by: mbitar._
 <!-- /document-footer -->

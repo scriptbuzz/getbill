@@ -1,15 +1,15 @@
-# getBill v0.1.0-alpha.23
+# getBill v0.1.0-alpha.24
 
-_Last modified: 2026-11-19 14:27 EST_
+_Last modified: 2026-11-19 14:29 EST_
 
-_Version: 0.1.0-alpha.23_
+_Version: 0.1.0-alpha.24_
 
 <p align="center">
   <img src=".github/banner.svg" alt="getBill turns AWS CUR 2.0 billing files in Amazon S3 into Excel workbooks: CSV or Parquet files in S3 go to getBill on your computer, which writes Excel workbooks back to S3." width="900">
 </p>
 
 <p align="center">
-  <img alt="Version 0.1.0-alpha.23" src="https://img.shields.io/badge/version-0.1.0--alpha.23-FF9900">
+  <img alt="Version 0.1.0-alpha.24" src="https://img.shields.io/badge/version-0.1.0--alpha.24-FF9900">
   <img alt="License: proprietary, FPT use only" src="https://img.shields.io/badge/license-proprietary%2C%20FPT%20only-B42318">
   <img alt="Python 3.9 or newer" src="https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&amp;logoColor=white">
   <img alt="Input: CSV or Parquet" src="https://img.shields.io/badge/input-CSV%20%7C%20Parquet-0E7C86">
@@ -34,7 +34,7 @@ one at a time in the terminal. The original CSV and Parquet files are never chan
 
 > [!NOTE]
 > This is an alpha release. It works, but it is still changing and has not yet been tested on real
-> AWS accounts. `getbill --version` prints `0.1.0a23`.
+> AWS accounts. `getbill --version` prints `0.1.0a24`.
 
 ## Features
 
@@ -309,8 +309,8 @@ To run the tests on your computer:
 ## Versions
 
 Every push to GitHub carries a new version number. The number is set in one place,
-`src/getbill/__init__.py`, in Python's format, such as `0.1.0a23`. People see it in a longer form,
-such as `v0.1.0-alpha.23`, in this README's title and badge, on both demo pages, and in the banner.
+`src/getbill/__init__.py`, in Python's format, such as `0.1.0a24`. People see it in a longer form,
+such as `v0.1.0-alpha.24`, in this README's title and badge, on both demo pages, and in the banner.
 
 Before each push, raise the version. The script updates every place that shows it:
 
@@ -407,5 +407,5 @@ Without `--changed`, the script stamps every document. You can also name the fil
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.23. Last modified: 2026-11-19 14:27 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 14:29 EST. Modified by: mbitar._
 <!-- /document-footer -->

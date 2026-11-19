@@ -1,8 +1,8 @@
 # getBill project history
 
-_Last modified: 2026-11-19 14:27 EST_
+_Last modified: 2026-11-19 14:29 EST_
 
-_Version: 0.1.0-alpha.23_
+_Version: 0.1.0-alpha.24_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -40,6 +40,7 @@ planned releases.
 | 0.1.0-alpha.21 | 2026-11-19 | The slide presentation was rebuilt to present getBill as a FinOps solution. It maps getBill to the FinOps Framework, shows how FPT's AWS resale becomes customer bills, adds charts for unusual spending, forecasts and savings, and moves the technical detail to an appendix. |
 | 0.1.0-alpha.22 | 2026-11-19 | An architecture diagram was added. It shows how the planned getBill platform in AWS collects the daily billing exports from customer accounts in AWS, Microsoft Azure and Google Cloud, converts them to FOCUS 1.2, and shows them in Amazon Quick dashboards. It uses the official AWS, Azure and Google Cloud icons. |
 | 0.1.0-alpha.23 | 2026-11-19 | Every document now shows the getBill version next to its date and time, both under the title and in the footer. The version script stamps every document in the next push with the new version, and the pre-push hook refuses a push that changes a document without it. |
+| 0.1.0-alpha.24 | 2026-11-19 | The test of the version script no longer fails. The script now stamps documents through its own function, which the test replaces, so the test does not need the real project. |
 
 ## Decisions and the reasons for them
 
@@ -144,5 +145,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Version: 0.1.0-alpha.23. Last modified: 2026-11-19 14:27 EST. Modified by: mbitar._
+_Internal use only. Version: 0.1.0-alpha.24. Last modified: 2026-11-19 14:29 EST. Modified by: mbitar._
 <!-- /document-footer -->

@@ -1,6 +1,6 @@
 # getBill restart guide
 
-_Last modified: 2026-11-19 09:39 EST_
+_Last modified: 2026-11-19 10:02 EST_
 
 This guide is for anyone who picks up getBill after a break. It says where the project stands, how
 to set up a computer to work on it, which routine steps each kind of change needs, and which
@@ -9,7 +9,7 @@ project got here and why the main decisions were made.
 
 ## Where the project stands
 
-These facts were true on 2026-11-19, at version 0.1.0-alpha.20.
+These facts were true on 2026-11-19, at version 0.1.0-alpha.21.
 
 - getBill works as an interactive command-line tool. It converts CSV and Parquet files, including
   AWS CUR 2.0 billing exports, from an S3 folder into Excel workbooks, and uploads the workbooks to
@@ -164,7 +164,7 @@ Then add a row for the new version to the release table in the
 | --- | --- |
 | [README.md](../README.md) | How to install, run and test getBill, which AWS permissions it needs, and how the version, secret check and stamps work. |
 | [getbill-product.md](getbill-product.md) | What getBill is for, who uses it, what each release must do, the decisions made so far, and how getBill is built. |
-| [getbill-product-overview.pdf](getbill-product-overview.pdf) | The slide presentation of getBill in its final form. Its charts use sample figures, not real customer data. |
+| [getbill-product-overview.pdf](getbill-product-overview.pdf) | The slide presentation of getBill as a FinOps solution, with a technical appendix. Its charts use sample figures, not real customer data. |
 | [getbill-project-history.md](getbill-project-history.md) | Every version, and the reasons behind the main design decisions. |
 | [getbill-pipeline-questions.md](getbill-pipeline-questions.md) | The requirements questionnaire for the product owner, with questions only. |
 | [getbill-pipeline-questions.xlsx](getbill-pipeline-questions.xlsx) | The blank workbook template, which people download to start answering. |
@@ -177,5 +177,5 @@ Then add a row for the new version to the release table in the
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 10:02 EST. Modified by: mbitar._
 <!-- /document-footer -->

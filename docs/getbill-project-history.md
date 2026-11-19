@@ -1,6 +1,6 @@
 # getBill project history
 
-_Last modified: 2026-11-19 09:39 EST_
+_Last modified: 2026-11-19 10:02 EST_
 
 This page records how getBill got to its current state and why the main decisions were made. The
 Git history of the repository was reset to a single commit on 2026-11-17. Everything useful that
@@ -35,6 +35,7 @@ planned releases.
 | 0.1.0-alpha.18 | 2026-11-19 | The product document was added. It records the first product decisions, the release 1 scope, and how getBill is built. |
 | 0.1.0-alpha.19 | 2026-11-19 | A PDF slide presentation of getBill was added. It shows how data comes in from the three clouds, the end-to-end flow, the transformation steps and the architecture, with charts that use sample figures. |
 | 0.1.0-alpha.20 | 2026-11-19 | The requirements questionnaire was rewritten to cover the full FinOps scope. It now has 216 questions in 23 sections that follow the FinOps Framework, with sections for billing, security and operations, and questions about reselling AWS. The question numbers changed. |
+| 0.1.0-alpha.21 | 2026-11-19 | The slide presentation was rebuilt to present getBill as a FinOps solution. It maps getBill to the FinOps Framework, shows how FPT's AWS resale becomes customer bills, adds charts for unusual spending, forecasts and savings, and moves the technical detail to an appendix. |
 
 ## Decisions and the reasons for them
 
@@ -139,5 +140,5 @@ planned releases.
 <!-- document-footer -->
 ---
 
-_Internal use only. Last modified: 2026-11-19 09:39 EST. Modified by: mbitar._
+_Internal use only. Last modified: 2026-11-19 10:02 EST. Modified by: mbitar._
 <!-- /document-footer -->
